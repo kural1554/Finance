@@ -1,0 +1,306 @@
+@import "./icons.scss";
+
+// Light Theme
+@import "./bootstrap.scss";
+@import "./app.scss";
+ 
+// RTL
+// @import "../scss/custom/rtl/general-rtl";
+// @import "../scss/custom/rtl/bootstrap-rtl";
+// @import "../scss/custom/rtl/spacing-rtl";
+// @import "../scss/custom/rtl/float-rtl";
+// @import "../scss/custom/rtl/text-rtl";
+// @import "../scss/custom/rtl/structure-rtl";
+// @import "../scss/custom/rtl/plugins-rtl";
+// @import "../scss/custom/rtl/components-rtl";
+// @import "../scss/custom/rtl/pages-rtl";
+
+body {
+  * {
+    outline: none !important;
+  }
+}
+
+.bg-primary {
+  background-color: $primary !important;
+}
+
+/* close button **/
+.close {
+  background: transparent;
+  border: 0;
+  font-size: 10px;
+  padding: 1.35rem 1.25rem;
+  background: transparent escape-svg($btn-close-bg) center / $btn-close-width auto no-repeat;
+  position: absolute;
+  top: 0;
+  right: 0;
+  opacity: 0.5;
+  width: 1em;
+  height: 1em;
+  z-index: 2;
+
+  span {
+    display: none;
+  }
+}
+
+.ReactModal__Overlay {
+  z-index: 5000 !important;
+}
+
+.rangeslider__handle:focus {
+  outline: none;
+}
+
+// React Table next css
+.react-bootstrap-table-page-btns-ul {
+  float: right !important;
+}
+
+.search-label {
+  float: right;
+}
+
+/* rating**/
+.rating-container {
+  background-color: transparent !important;
+}
+
+/* form editor **/
+.rdw-editor-main {
+  border: 1px solid $gray-300;
+  height: 239px;
+  padding-left: 15px;
+}
+
+.dz-message {
+  text-align: center;
+  padding: 30px;
+}
+
+.search-box .search-icon-search {
+  font-size: 16px !important;
+  position: absolute !important;
+  left: 13px !important;
+  top: 0 !important;
+  line-height: 38px !important;
+}
+
+// rdw-editor
+.rdw-editor-toolbar,
+.rdw-editor-main {
+  border-color: $input-border-color !important;
+}
+
+.rdw-editor-toolbar,
+.rdw-option-wrapper,
+.rdw-dropdown-wrapper,
+.rdw-dropdown-optionwrapper {
+  background-color: var(--#{$prefix}body-bg) !important;
+}
+
+.rdw-dropdown-wrapper,
+.rdw-option-wrapper,
+.rdw-dropdown-optionwrapper {
+  box-shadow: none !important;
+}
+
+.rdw-option-wrapper,
+.rdw-dropdown-wrapper,
+.rdw-option-wrapper {
+  border-color: var(--#{$prefix}body-bg) !important;
+}
+
+.rdw-dropdown-optionwrapper {
+  border-color: var(--#{$prefix}border-color) !important;
+}
+
+.rdw-dropdown-carettoopen {
+  border-top-color: var(--#{$prefix}dark);
+}
+
+.rdw-dropdown-carettoclose {
+  border-bottom-color: var(--#{$prefix}dark);
+}
+
+.rdw-dropdownoption-active,
+.rdw-dropdownoption-highlighted {
+  background: rgba(var(--#{$prefix}light-rgb), 0.6) !important;
+}
+
+// dark
+[data-bs-theme="dark"] {
+
+  .rdw-option-wrapper {
+    img {
+      filter: invert(1) grayscale(100%) brightness(200%);
+    }
+  }
+}
+
+//Two verification Page
+.verification {
+  input {
+    &:focus {
+      border: none;
+      outline: none !important;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .verification {
+    input {
+      width: 30px !important;
+    }
+  }
+}
+
+@media (max-width: 320px) {
+  .verification {
+    input {
+      width: 30px !important;
+      height: 30px !important;
+      font-size: 15px !important;
+    }
+  }
+}
+
+.rangeslider-horizontal .rangeslider__fill {
+  background-color: $primary !important;
+}
+
+.preview-thumbsnav {
+  display: flex !important;
+  list-style-type: none;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-months .flatpickr-month,
+.flatpickr-weekdays,
+span.flatpickr-weekday {
+  background: $primary !important;
+}
+
+.flatpickr-calendar.arrowBottom:after {
+  border-top-color: $primary !important;
+}
+
+.flatpickr-calendar.arrowTop:after {
+  border-bottom-color: $primary !important;
+}
+
+
+// Flatepicker
+.flatpickr-months,
+.flatpickr-weekdays,
+.flatpickr-monthDropdown-months {
+  background-color: $primary !important;
+}
+
+.flatpickr-innerContainer {
+  background-color: var(--#{$prefix}body-bg) !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-months .flatpickr-month,
+.flatpickr-weekdays.flatpickr-days,
+span.flatpickr-weekday {
+  background-color: $primary !important;
+}
+
+.search-box .search-icon {
+  font-size: 16px;
+  position: absolute;
+  left: 13px;
+  top: 0;
+  line-height: 38px !important;
+  display: block;
+}
+
+.carousel-indicators button,
+.carousel-indicators li {
+  -webkit-box-sizing: content-box;
+  box-sizing: content-box;
+  -webkit-box-flex: 0;
+  -ms-flex: 0 1 auto;
+  flex: 0 1 auto;
+  padding: 0;
+  margin-right: 3px;
+  margin-left: 3px;
+  text-indent: -999px;
+  cursor: pointer;
+  background-color: #fff;
+  background-clip: padding-box;
+  -webkit-transition: opacity .6s ease;
+  transition: opacity .6s ease;
+  width: 30px ;
+  height: 3px ;
+}
+
+.dashboard-slider.carousel-indicators li {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+}
+
+.dashboard-slider.carousel-indicators {
+  position: relative;
+}
+
+#reviewcarouselIndicators .carousel-indicators {
+  margin-left: 0;
+  float: left;
+}
+
+.bx {
+  font-weight: 400;
+}
+
+.sweet-alert h2 {
+  font-size: 22px !important;
+  font-weight: 500 !important;
+}
+
+.dropdown-toggle::after,
+.dropstart .dropdown-toggle::before {
+  display: none !important;
+}
+
+//react-table
+.custom-header-css {
+  thead {
+    tr {
+      th {
+        div:last-child {
+          min-height: 38px;
+        }
+      }
+    }
+
+    td:nth-last-child(2) {
+      width: 150px !important;
+    }
+  }
+}
+
+.carousel-indicators [data-bs-target] {
+  font-size: 0;
+}
+
+.modal-dialog,
+.modal-dialog-centered {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  min-height: calc(100% - var(--bs-modal-margin) * 2);
+}
+
+.card-body.z-0 {
+  z-index: 0 !important
+}
+
