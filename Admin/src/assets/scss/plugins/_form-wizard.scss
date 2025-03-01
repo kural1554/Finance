@@ -21,9 +21,9 @@
       font-size: 20px;
 
       @media (max-width: 575.98px) {
-        width: 40px;
-        height: 40px;
-        line-height: 38px;
+        width: 56px;
+        height: 56px;
+        line-height: 54px;
       }
     }
 
@@ -64,14 +64,22 @@
       &::after{
         content: "";
         position: absolute;
-        width: 75%;
+        width: 61%;
         height: 2px;
         background-color: var(--#{$prefix}border-color);
-        left: 62%;
+        left: 69%;
         top: 50%;
         transform: translateY(-50%);
         @media (max-width: 575.98px) {
-          display: none;
+          content: "";
+          position: absolute;
+          width: 22%;
+          height: 2px;
+          background-color: var(--#{$prefix}border-color);
+          left: 89%;
+          top: 50%;
+          transform: translateY(-50%);
+          
         }
       }
       &.active{
