@@ -27,8 +27,10 @@ export const formTabs = [
     alternatePhone: "",
   
     // Identification
-    panNumber: "",
-    aadharNumber: "",
+    aadhar: "",
+    pan: "",
+    voterId: "",
+    idProofType:"",
   
     // Address Details
     addressLine1: "",
@@ -68,14 +70,19 @@ export const formTabs = [
     propertyOwnership: "",
   
     // References
-    reference1Name: "",
-    reference1Relationship: "",
-    reference1Phone: "",
-    reference1Email: "",
-    reference2Name: "",
-    reference2Relationship: "",
-    reference2Phone: "",
-    reference2Email: "",
+    nominees: [
+      {
+        nomineeName: "",
+        nomineePhone: "",
+        nomineeEmail: "",
+        nomineeRelationship: "",
+        nomineeOtherRelationship: "",
+        nomineeidProofType: "",
+        nomineeAddress: "",
+        nomineeidProofNumber: "",
+        nomineeidProofFile: null,
+      },
+    ],
   
     // Agreement & Signatures
     agreeTerms: false,
