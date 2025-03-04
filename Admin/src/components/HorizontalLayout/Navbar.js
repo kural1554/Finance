@@ -216,9 +216,7 @@ const Navbar = props => {
                             <Link to="/extended-rating" className="dropdown-item">
                               {props.t("Rating")}
                             </Link>
-                            <Link to="/extended-notifications" className="dropdown-item">
-                              {props.t("Notifications")}
-                            </Link>
+                            
                           </div>
                         </Col>
                       </Row>

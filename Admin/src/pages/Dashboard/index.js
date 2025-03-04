@@ -21,7 +21,7 @@ import WalletBalance from './WalletBalance';
 import InvestedOverview from './InvestedOverview';
 import MarketOverview from './MarketOverview';
 import Locations from './Locations';
-import Trading from './Trading';
+
 import Transactions from './Transactions';
 import RecentActivity from './RecentActivity';
 import NewSlider from './NewSlider';
@@ -79,14 +79,14 @@ const options = {
 const Dashboard = () => {
 
     //meta title
-    document.title = "Dashboard | Minia - React Admin & Dashboard Template";
+    document.title = "Dashboard | SPK Finance";
 
     return (
         <React.Fragment>
             <div className="page-content">
                 <Container fluid>
                     {/* Render Breadcrumbs */}
-                    <Breadcrumbs title="Dashboard" breadcrumbItem="Dashboard" />
+                    {/* <Breadcrumbs  breadcrumbItem="Dashboard" /> */}
 
                     <Row>
                         {(WidgetsData || []).map((widget, key) => (
@@ -119,7 +119,7 @@ const Dashboard = () => {
                                                     type="line"
                                                     className="apex-charts mb-2"
                                                     dir="ltr"
-                                                    height={50}
+                                                    height={100}
                                                 />
                                             </Col>
                                         </Row>
@@ -152,15 +152,11 @@ const Dashboard = () => {
                             </Row>
                         </Col>
                     </Row>
-                    <Row>
+                    {/* <Row>
                         <MarketOverview />
                         <Locations />
-                    </Row>
-                    <Row>
-                        <Trading />
-                        <Transactions />
-                        <RecentActivity />
-                    </Row>
+                    </Row> */}
+                    
                 </Container>
             </div>
         </React.Fragment>

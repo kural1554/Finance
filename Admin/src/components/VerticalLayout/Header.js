@@ -79,7 +79,7 @@ const Header = props => {
                   <img src={logoSvg} alt="" height="24" />
                 </span>
                 <span className="logo-lg">
-                  <img src={logoSvg} alt="" height="24" /> <span className="logo-txt">Minia</span>
+                  <img src={logoSvg} alt="" height="24" /> <span className="logo-txt">SPK Finance</span>
                 </span>
               </Link>
 
@@ -88,7 +88,7 @@ const Header = props => {
                   <img src={logoSvg} alt="" height="24" />
                 </span>
                 <span className="logo-lg">
-                  <img src={logoSvg} alt="" height="24" /> <span className="logo-txt">Minia</span>
+                  <img src={logoSvg} alt="" height="24" /> <span className="logo-txt">SPK Finance</span>
                 </span>
               </Link>
             </div>
@@ -174,8 +174,7 @@ const Header = props => {
               </div>
             </div>
 
-            <LanguageDropdown />
-
+           
             {/* light / dark mode */}
             <LightDark layoutMode={props['layoutMode']} onChangeLayoutMode={onChangeLayoutMode} />
 
@@ -186,16 +185,8 @@ const Header = props => {
                 setsocialDrp(!socialDrp);
               }}
             >
-              <DropdownToggle
-                className="btn header-item noti-icon "
-                tag="button"
-              >
-                <FeatherIcon
-                  icon="grid"
-                  className="icon-lg"
-                />
-              </DropdownToggle>
-              <DropdownMenu className="dropdown-menu-lg dropdown-menu-end">
+              
+              {/* <DropdownMenu className="dropdown-menu-lg dropdown-menu-end">
                 <div className="p-2">
                   <Row className="g-0">
                     <Col>
@@ -239,11 +230,11 @@ const Header = props => {
                     </Col>
                   </Row>
                 </div>
-              </DropdownMenu>
+              </DropdownMenu> */}
             </Dropdown>
 
-            <NotificationDropdown />
-            <div
+            {/* <NotificationDropdown /> */}
+            {/* <div
               onClick={() => {
                 dispatch(showRightSidebarAction(!showRightSidebar));
               }}
@@ -258,7 +249,7 @@ const Header = props => {
                   className="icon-lg"
                 />
               </button>
-            </div>
+            </div> */}
             <ProfileMenu />
 
           </div>

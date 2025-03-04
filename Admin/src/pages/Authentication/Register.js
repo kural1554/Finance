@@ -70,13 +70,13 @@ const Register = props => {
                   <div className="d-flex flex-column h-100">
                     <div className="mb-4 mb-md-5 text-center">
                       <Link to="/dashboard" className="d-block auth-logo">
-                        <img src={logo} alt="" height="28" /> <span className="logo-txt">Minia</span>
+                        <img src={logo} alt="" height="28" /> <span className="logo-txt">SPK</span>
                       </Link>
                     </div>
                     <div className="auth-content my-auto">
                       <div className="text-center">
                         <h5 className="mb-0">Register Account</h5>
-                        <p className="text-muted mt-2">Get your free Minia account now.</p>
+                        
                       </div>
 
                       <Form
@@ -155,7 +155,7 @@ const Register = props => {
                         
                         <div className="mb-4">
                           <p className="mb-0">
-                            By registering you agree to the Minia{" "}
+                            By registering you agree to the spkfinance{" "}
                             <Link to="#" className="text-primary">
                               Terms of Use
                             </Link>
@@ -177,7 +177,7 @@ const Register = props => {
                       </div>
                     </div>
                     <div className="mt-4 mt-md-5 text-center">
-                      <p className="mb-0">© {new Date().getFullYear()} Minia . Crafted with <i className="mdi mdi-heart text-danger"></i> by Themesbrand</p>
+                    <p className="mb-0">© {new Date().getFullYear()} SPK Finance . developed <i className="mdi mdi-heart text-danger"></i> by SPK Technology</p>
                     </div>
                   </div>
                 </div>

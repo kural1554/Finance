@@ -6,7 +6,7 @@ import logo from "../../assets/images/logo-sm.svg";
 
 const Logout = () => {
 
-    document.title = "Log out | Minia - React Admin & Dashboard Template";
+    document.title = "Log out | SPK Finance";
 
     return (
         <div className="container-fluid p-0">
@@ -31,7 +31,7 @@ const Logout = () => {
 
                                             <div className="mt-4 pt-2">
                                                 <h5>You are Logged Out</h5>
-                                                <p className="text-muted font-size-15">Thank you for using <span className="fw-semibold text-dark">Minia</span></p>
+                                                <p className="text-muted font-size-15">Thank you for using <span className="fw-semibold text-dark">SPK</span></p>
                                                 <div className="mt-4">
                                                     <Link to="/dashboard" className="btn btn-primary w-100 waves-effect waves-light">Sign In</Link>
                                                 </div>
@@ -44,7 +44,7 @@ const Logout = () => {
                                         </div>
                                     </div>
                                     <div className="mt-4 mt-md-5 text-center">
-                                        <p className="mb-0">© {new Date().getFullYear()}  Minia   . Crafted with <i className="mdi mdi-heart text-danger"></i> by Themesbrand</p>
+                                    <p className="mb-0">© {new Date().getFullYear()} SPK Finance . developed <i className="mdi mdi-heart text-danger"></i> by SPK Technology</p>
                                     </div>
                                 </div>
                             </div>
