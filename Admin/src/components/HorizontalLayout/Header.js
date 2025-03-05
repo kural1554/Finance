@@ -51,7 +51,7 @@ const Header = props => {
                 </span>
                 <span className="logo-lg">
                   <img src={logo} alt="" height="24" />
-                  <span className="logo-txt ms-2">Minia</span>
+                  <span className="logo-txt ms-2">SPK</span>
                 </span>
               </Link>
 

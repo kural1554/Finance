@@ -29,7 +29,7 @@ const Logout = props => {
                   <div className="d-flex flex-column h-100">
                     <div className="mb-4 mb-md-5 text-center">
                       <Link to="index.html" className="d-block auth-logo">
-                        <img src={logo} alt="" height="28" /> <span className="logo-txt">Minia</span>
+                        <img src={logo} alt="" height="28" /> <span className="logo-txt">SPK</span>
                       </Link>
                     </div>
                     <div className="auth-content my-auto">
@@ -42,7 +42,7 @@ const Logout = props => {
 
                         <div className="mt-4 pt-2">
                           <h5>You are Logged Out</h5>
-                          <p className="text-muted font-size-15">Thank you for using <span className="fw-semibold text-dark">Minia</span></p>
+                          <p className="text-muted font-size-15">Thank you for using <span className="fw-semibold text-dark">SPK</span></p>
                           <div className="mt-4">
                             <Link to="/dashboard" className="btn btn-primary w-100 waves-effect waves-light">Sign In</Link>
                           </div>
@@ -55,7 +55,7 @@ const Logout = props => {
                       </div>
                     </div>
                     <div className="mt-4 mt-md-5 text-center">
-                      <p className="mb-0">© {new Date().getFullYear()}  Minia   . Crafted with <i className="mdi mdi-heart text-danger"></i> by Themesbrand</p>
+                    <p className="mb-0">© {new Date().getFullYear()} SPK Finance . developed <i className="mdi mdi-heart text-danger"></i> by SPK Technology</p>
                     </div>
                   </div>
                 </div>

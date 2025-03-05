@@ -78,9 +78,9 @@ const fakeBackend = () => {
     })
   })
 
-  mock.onPost("/fake-forget-pwd").reply(config=> {
+  mock.onPost("/fake-forget-pwd").reply(config => {
     // User needs to check that user is eXist or not and send mail for Reset New password
-    const user = JSON.parse(config["data"])
+
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         resolve([200, "Check you mail and reset your password."])

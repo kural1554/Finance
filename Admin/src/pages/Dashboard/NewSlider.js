@@ -59,40 +59,13 @@ const NewSlider = () => {
                 onExiting={() => setAnimating(true)}
                 onExited={() => setAnimating(false)}
             >
-                <div className="text-center p-2">
-                    <i className={'mdi mdi-' + item.icon + ' widget-box-1-icon'}></i>
-                    <div className="avatar-md m-auto">
-                        <span className="avatar-title rounded-circle bg-light-subtle text-white font-size-24">
-                            <i className={"mdi mdi-" + item["icon"]}></i>
-                        </span>
-                    </div>
-                    <h4 className="mt-3 lh-base fw-normal text-white">
-                        <b>{item["title"]}</b> News
-                    </h4>
-                    <p className="text-white-50 font-size-13"> {item["description"]} </p>
-                    <Link to="/invoices-list" className="btn btn-light btn-sm" >
-                        View details <i className="mdi mdi-arrow-right ms-1"></i>
-                    </Link>
-                </div>
             </CarouselItem>
         );
     });
 
     return (
         <Col xl={4}>
-            <Card className="bg-primary text-white shadow-primary card-h-100">
-                <CardBody>
-                    <Carousel
-                        activeIndex={activeIndex}
-                        next={next}
-                        previous={previous}
-                        className="pb-4"
-                    >
-                        {slides}
-                    </Carousel>
-                    <CarouselIndicators tag="button" items={items} activeIndex={activeIndex} onClickHandler={goToIndex} className="carousel-indicators-rounded m-0" />
-                </CardBody>
-            </Card>
+            
         </Col>
     );
 };

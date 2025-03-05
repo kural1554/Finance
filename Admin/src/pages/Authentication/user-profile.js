@@ -33,7 +33,7 @@ import { createSelector } from "reselect";
 const UserProfile = props => {
 
   //meta title
-  document.title = "Profile | Minia - React Admin & Dashboard Template";
+  document.title = "Profile | SPK Finance";
 
   const dispatch = useDispatch()
 

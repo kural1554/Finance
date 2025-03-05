@@ -13,23 +13,23 @@ const items = [
     {
         id: 1,
         img: img1,
-        name: "Richard Drews",
-        designation: "Web Designer",
-        description: "I feel confident imposing change on myself. It's a lot more progressing fun than looking back. That's why I ultricies enim at malesuada nibh diam on tortor neaded to throw curve balls."
+        name: "Anbu",
+        designation: "FOUNDER",
+        description: "Financial stability is the foundation of a secure future, requiring careful planning, smart investments, and disciplined spending. By understanding the principles of budgeting, saving, and investing, individuals can maximize their wealth and achieve financial freedom. In today’s dynamic economic landscape, leveraging opportunities in stocks, real estate, and digital assets can lead to long-term growth. However, financial literacy is key to making informed decisions and mitigating risks. With strategic planning and prudent financial management, anyone can build a solid financial future and embrace economic security with confidence."
     },
     {
         id: 2,
         img: img2,
-        name: "Rosanna French",
-        designation: "Web Developer",
-        description: "Our task must be to free ourselves by widening our circle of compassion to embrace all living   creatures and the whole of quis consectetur nunc sit amet semper justo. nature and its beauty."
+        name: "Vijayalakshmi",
+        designation: "CEO",
+        description: "Managing personal finances effectively requires a balance between income, expenses, savings, and investments. Setting clear financial goals, such as buying a home, funding education, or planning for retirement, helps individuals make informed decisions. Responsible credit usage, timely debt repayments, and maintaining an emergency fund are essential for financial security. Additionally, exploring diverse investment options—such as stocks, mutual funds, and fixed deposits—can enhance long-term financial growth. By staying informed about market trends and adopting smart money habits, individuals can achieve financial independence and build a stable future."
     },
     {
         id: 3,
         img: img3,
-        name: "Ilse R. Eaton",
-        designation: "Manager",
-        description: "I've learned that people will forget what you said, people will forget what you did,but people will never forget how donec in efficitur lectus, nec lobortis metus you made them feel."
+        name: "Muthukumar",
+        designation: "Collection manager",
+        description: "A Collection Manager plays a crucial role in maintaining a company's financial stability by overseeing debt recovery and ensuring timely payments from clients. They develop and implement effective collection strategies, negotiate repayment plans, and coordinate with customers to resolve outstanding balances. By analyzing credit risks and monitoring delinquent accounts, they help minimize financial losses and improve cash flow. Strong communication, negotiation skills, and knowledge of regulatory compliance are essential for success in this role. A well-managed collection process not only strengthens the company's revenue but also enhances customer relationships by providing structured repayment solutions."
     }
 ];
 
