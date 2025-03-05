@@ -53,11 +53,8 @@
     "react": "^18.3.1",
     "react-apexcharts": "^1.4.1",
     "react-auth-code-input": "^3.2.1",
-<<<<<<< HEAD
     "react-beautiful-dnd": "^13.1.1",
-=======
     "react-bootstrap": "^2.10.9",
->>>>>>> a833f44da289a716c6f69632224c07a8e3cf3111
     "react-chartjs-2": "^5.2.0",
     "react-color": "^2.19.3",
     "react-copy-to-clipboard": "^5.1.0",
@@ -163,6 +160,7 @@
     "autoprefixer": "10.4.5"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "eslint-config-standard-react": "^13.0.0",
     "eslint-plugin-react": "^7.33.1",
     "prettier": "^3.0.1"
