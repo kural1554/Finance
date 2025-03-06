@@ -1,6 +1,6 @@
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-export const validateForm = (activeTab, formData, setErrors, uploadedFiles) => {
+export const validateForm = (activeTab, formData, setErrors, idProofFile) => {
   let isValid = true;
   const newErrors = {};
   console.log();
@@ -12,7 +12,7 @@ export const validateForm = (activeTab, formData, setErrors, uploadedFiles) => {
   };
 
   console.log("formData:", formData);
-  console.log("uploadedFiles:", uploadedFiles);
+  console.log("idProofFile:", idProofFile);
   // Tab 1: Personal Details
   if (activeTab === 1) {
     if (isEmpty(formData.title)) {
@@ -53,8 +53,8 @@ export const validateForm = (activeTab, formData, setErrors, uploadedFiles) => {
       newErrors.phone = "Phone Number must be 10 digits.";
       isValid = false;
     }
-    if (isEmpty(formData.addressLine1)) {
-      newErrors.addressLine1 = "Address Line 1 is required.";
+    if (isEmpty(formData.address)) {
+      newErrors.address = "Address is required.";
       isValid = false;
     }
     if (isEmpty(formData.city)) {
@@ -98,7 +98,7 @@ export const validateForm = (activeTab, formData, setErrors, uploadedFiles) => {
         }
       }
 
-      if (!uploadedFiles[idProofType]) {
+      if (!idProofFile[idProofType]) {
         newErrors[`${idProofType}File`] = `${idProofType.toUpperCase()} Document is required.`;
         isValid = false;
       }
@@ -286,12 +286,8 @@ export const validateForm = (activeTab, formData, setErrors, uploadedFiles) => {
       newErrors.translatorName = "Translator Name is required.";
       isValid = false;
     }
-    if (isEmpty(formData.translatorSignature)) {
-      newErrors.translatorSignature = "Translator Signature is required.";
-      isValid = false;
-    }
-    if (!formData.applicantThumbprint) {
-      newErrors.applicantThumbprint = "Applicant's Thumbprint is required.";
+    if (isEmpty(formData.translatorPlace)) {
+      newErrors.translatorPlace = "please Specify current place";
       isValid = false;
     }
   }
@@ -299,7 +295,7 @@ export const validateForm = (activeTab, formData, setErrors, uploadedFiles) => {
   // Set errors and return validation status
   setErrors(newErrors);
   console.log(newErrors);
-  toast.error("gyig");
+  toast.error(newErrors);
   return isValid;
 };
 export default validateForm
