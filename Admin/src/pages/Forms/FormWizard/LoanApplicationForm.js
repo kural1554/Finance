@@ -1,6 +1,26 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Card, CardHeader, CardBody, TabContent, TabPane, Nav, NavItem, NavLink, Button, Modal, ModalHeader, ModalBody, ModalFooter, Row, Table, Col, Form, FormGroup, Label, Input, UncontrolledTooltip,
+  Card,
+  CardHeader,
+  CardBody,
+  TabContent,
+  TabPane,
+  Nav,
+  NavItem,
+  NavLink,
+  Button,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Row,
+  Table,
+  Col,
+  Form,
+  FormGroup,
+  Label,
+  Input,
+  UncontrolledTooltip,
 } from "reactstrap";
 import Dropzone from "react-dropzone";
 import { useReactToPrint } from "react-to-print";
@@ -34,7 +54,7 @@ const LoanApplicationForm = () => {
     nomineeidProofNumber: "",
     nomineeidProofFile: null,
   });
-  
+
   // Handle nominee field changes
   const handleNomineesChange = (field, value) => {
     setNewNominee((prev) => ({
@@ -42,26 +62,31 @@ const LoanApplicationForm = () => {
       [field]: value,
     }));
   };
-  
+
   // Add new nominee to the list
   const addNominee = () => {
-    if (!newNominee.nomineeName || !newNominee.nomineePhone || !newNominee.nomineeEmail||!newNominee.nomineeRelationship) {
+    if (
+      !newNominee.nomineeName ||
+      !newNominee.nomineePhone ||
+      !newNominee.nomineeEmail ||
+      !newNominee.nomineeRelationship
+    ) {
       alert("Please fill all nominee fields.");
       return;
     }
-  
+
     setNominees((prevNominees) => {
       const updatedNominees = [...prevNominees, { ...newNominee }];
-  
+
       // Sync nominees with formData
       setFormData((prevData) => ({
         ...prevData,
         nominees: updatedNominees,
       }));
-  
+
       return updatedNominees;
     });
-  
+
     // Reset newNominee fields after adding
     setNewNominee({
       nomineeName: "",
@@ -75,7 +100,7 @@ const LoanApplicationForm = () => {
       nomineeidProofFile: null,
     });
   };
-  
+
   // Handle nominee file uploads
   const handleNomineeFileUpload = (acceptedFiles) => {
     if (acceptedFiles.length > 0) {
@@ -93,11 +118,11 @@ const LoanApplicationForm = () => {
     }
   };
   // Helper function to format file size
-const formatFileSize = (size) => {
-  if (size < 1024) return `${size} bytes`;
-  else if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
-  else return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-};
+  const formatFileSize = (size) => {
+    if (size < 1024) return `${size} bytes`;
+    else if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
+    else return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+  };
 
   // Remove nominee file
   const removeNomineeFile = () => {
@@ -106,36 +131,46 @@ const formatFileSize = (size) => {
       nomineeidProofFile: null,
     }));
   };
-  
+
   // Remove a nominee
   const removeNominee = (index) => {
     setNominees((prevNominees) => {
       const updatedNominees = prevNominees.filter((_, i) => i !== index);
-      
+
       // Sync nominees with formData
       setFormData((prevData) => ({
         ...prevData,
         nominees: updatedNominees,
       }));
-  
+
       return updatedNominees;
     });
   };
-  
+
   // Ensure file URLs are cleaned up when component unmounts
   useEffect(() => {
     return () => {
-      nominees.forEach((nominee) =>
-        nominee.nomineeidProofFile?.preview && URL.revokeObjectURL(nominee.nomineeidProofFile.preview)
+      nominees.forEach(
+        (nominee) =>
+          nominee.nomineeidProofFile?.preview &&
+          URL.revokeObjectURL(nominee.nomineeidProofFile.preview)
       );
     };
   }, [nominees]);
-  
+
   useEffect(() => {
     return () => {
-      selectedFiles.forEach((file) => file.preview && URL.revokeObjectURL(file.preview));
-      Object.values(uploadedFiles).forEach((file) => file.preview && URL.revokeObjectURL(file.preview));
-      nominees.forEach((nominee) => nominee.nomineeidProofFile?.preview && URL.revokeObjectURL(nominee.nomineeidProofFile.preview));
+      selectedFiles.forEach(
+        (file) => file.preview && URL.revokeObjectURL(file.preview)
+      );
+      Object.values(uploadedFiles).forEach(
+        (file) => file.preview && URL.revokeObjectURL(file.preview)
+      );
+      nominees.forEach(
+        (nominee) =>
+          nominee.nomineeidProofFile?.preview &&
+          URL.revokeObjectURL(nominee.nomineeidProofFile.preview)
+      );
     };
   }, [selectedFiles, uploadedFiles, nominees]);
 
@@ -221,11 +256,10 @@ const formatFileSize = (size) => {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    
     console.log("Form submitted:", formData);
 
     const isValid = validateForm(activeTab, formData, setErrors, uploadedFiles);
@@ -258,32 +292,54 @@ const formatFileSize = (size) => {
     if (activeTab !== tab && tab >= 1 && tab <= 8) {
       if (tab > activeTab) {
         try {
-          const isValid = validateForm(activeTab, formData, setErrors, uploadedFiles);
-          if (!isValid) return;//check form validity
+          const isValid = validateForm(
+            activeTab,
+            formData,
+            setErrors,
+            uploadedFiles
+          );
+          // if (!isValid) return;//check form validity
         } catch (error) {
           console.error("Validation Error:", error);
           return;
         }
       }
       setActiveTab(tab);
-  
+
       // Scroll to the active step icon smoothly
       setTimeout(() => {
         const activeStep = document.getElementById(`Step${tab}`);
         if (activeStep) {
-          activeStep.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+          activeStep.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "center",
+          });
         }
       }, 100);
     }
   };
-  
-  
 
-  const renderFormGroup = (label, name, type = "text", options = [], value, onChange = handleInputChange) => (
+  const renderFormGroup = (
+    label,
+    name,
+    type = "text",
+    options = [],
+    value,
+    onChange = handleInputChange
+  ) => (
     <FormGroup>
       <Label for={name}>{label}</Label>
       {type === "select" ? (
-        <Input type="select" style={{borderColor:"black"}} name={name} id={name} value={value} onChange={onChange} invalid={!!errors[name]}>
+        <Input
+          type="select"
+          style={{ borderColor: "black" }}
+          name={name}
+          id={name}
+          value={value}
+          onChange={onChange}
+          invalid={!!errors[name]}
+        >
           {options.map((option, index) => (
             <option key={index} value={option.value}>
               {option.label}
@@ -291,12 +347,18 @@ const formatFileSize = (size) => {
           ))}
         </Input>
       ) : (
-        <Input style={{borderColor:"black"}}type={type} name={name} id={name} value={value} onChange={onChange}  invalid={!!errors[name]}/>
+        <Input
+          style={{ borderColor: "black" }}
+          type={type}
+          name={name}
+          id={name}
+          value={value}
+          onChange={onChange}
+          invalid={!!errors[name]}
+        />
       )}
     </FormGroup>
   );
-  
-  
 
   return (
     <React.Fragment>
@@ -385,94 +447,118 @@ const formatFileSize = (size) => {
 
               {/* Tab 1: Personal Details */}
               <TabPane tabId={1}>
-  <Row>
-    <Col className="col-12">
-      <CardBody className="position-relative">
-        {/* Preview images in a circular frame */}
-        <div
-          className="position-absolute"
-          style={{
-            top: "40px",
-            right: "82px",
-            zIndex: "100",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
-          {selectedFiles.map((f, i) => (
-            <div key={i} className="d-flex flex-column align-items-center">
-              {/* Circular Image Preview */}
-              <img
-                src={f.preview}
-                alt={f.name}
-                width="80"
-                height="80"
-                className="rounded-circle border"
-                style={{ objectFit: "cover" }} // Ensure full image fits inside the circle
-              />
-              <small className="d-block text-center">{f.name}</small>
-              <small className="text-muted">{f.formattedSize}</small>
-              <button
-                type="button"
-                className="btn btn-link btn-sm text-danger p-0"
-                onClick={() => {
-                  setSelectedFiles(selectedFiles.filter((_, index) => index !== i));
-                }}
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <Form className="d-flex justify-content-end">
-          <div className="col-md-4 col-lg-3">
-            <Dropzone
-              onDrop={(acceptedFiles) => handleAcceptedFiles(acceptedFiles)}
-              accept={{ "image/*": [] }}
-              maxFiles={1}
-              maxSize={2 * 1024 * 1024}
-              onDropRejected={() => {
-                alert("Invalid file type or size. Please upload a valid file.");
-              }}
-            >
-              {({ getRootProps, getInputProps }) => (
-                <div className="dropzone" style={{ minHeight: "100px" }}>
-                  <div
-                    {...getRootProps()}
-                    className="dz-message p-3 border rounded text-center"
-                    style={{ cursor: "pointer" }}
-                  >
-                    <input {...getInputProps()} />
-                    <div className="d-flex flex-column align-items-center">
-                      {/* Placeholder Circle */}
+                <Row>
+                  <Col className="col-12">
+                    <CardBody className="position-relative">
+                      {/* Preview images in a circular frame */}
                       <div
-                        className="rounded-circle d-flex align-items-center justify-content-center border"
+                        className="position-absolute"
                         style={{
-                          width: "80px",
-                          height: "80px",
-                          backgroundColor: "#f8f9fa",
+                          top: "40px",
+                          right: "82px",
+                          zIndex: "100",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: "10px",
                         }}
                       >
-                        <i className="bx bx-camera fs-3 text-muted" />
+                        {selectedFiles.map((f, i) => (
+                          <div
+                            key={i}
+                            className="d-flex flex-column align-items-center"
+                          >
+                            {/* Circular Image Preview */}
+                            <img
+                              src={f.preview}
+                              alt={f.name}
+                              width="80"
+                              height="80"
+                              className="rounded-circle border"
+                              style={{ objectFit: "cover" }} // Ensure full image fits inside the circle
+                            />
+                            <small className="d-block text-center">
+                              {f.name}
+                            </small>
+                            <small className="text-muted">
+                              {f.formattedSize}
+                            </small>
+                            <button
+                              type="button"
+                              className="btn btn-link btn-sm text-danger p-0"
+                              onClick={() => {
+                                setSelectedFiles(
+                                  selectedFiles.filter(
+                                    (_, index) => index !== i
+                                  )
+                                );
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                      <h6 className="mb-0 mt-2">Upload Passport Photo</h6>
-                      <small className="text-muted">Click or drag an image</small>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Dropzone>
-            {errors.passportPhoto && (
-              <div className="text-danger small mt-2">{errors.passportPhoto}</div>
-            )}
-          </div>
-        </Form>
-      </CardBody>
-    </Col>
-  </Row>
+
+                      <Form className="d-flex justify-content-end">
+                        <div className="col-md-4 col-lg-3">
+                          <Dropzone
+                            onDrop={(acceptedFiles) =>
+                              handleAcceptedFiles(acceptedFiles)
+                            }
+                            accept={{ "image/*": [] }}
+                            maxFiles={1}
+                            maxSize={2 * 1024 * 1024}
+                            onDropRejected={() => {
+                              alert(
+                                "Invalid file type or size. Please upload a valid file."
+                              );
+                            }}
+                          >
+                            {({ getRootProps, getInputProps }) => (
+                              <div
+                                className="dropzone"
+                                style={{ minHeight: "100px" }}
+                              >
+                                <div
+                                  {...getRootProps()}
+                                  className="dz-message p-3 border rounded text-center"
+                                  style={{ cursor: "pointer" }}
+                                >
+                                  <input {...getInputProps()} />
+                                  <div className="d-flex flex-column align-items-center">
+                                    {/* Placeholder Circle */}
+                                    <div
+                                      className="rounded-circle d-flex align-items-center justify-content-center border"
+                                      style={{
+                                        width: "80px",
+                                        height: "80px",
+                                        backgroundColor: "#f8f9fa",
+                                      }}
+                                    >
+                                      <i className="bx bx-camera fs-3 text-muted" />
+                                    </div>
+                                    <h6 className="mb-0 mt-2">
+                                      Upload Passport Photo
+                                    </h6>
+                                    <small className="text-muted">
+                                      Click or drag an image
+                                    </small>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Dropzone>
+                          {errors.passportPhoto && (
+                            <div className="text-danger small mt-2">
+                              {errors.passportPhoto}
+                            </div>
+                          )}
+                        </div>
+                      </Form>
+                    </CardBody>
+                  </Col>
+                </Row>
                 <Form>
                   <Row>
                     {/* Title, First Name, Last Name */}
@@ -527,7 +613,7 @@ const formatFileSize = (size) => {
                       {renderFormGroup("Email", "email", "email")}
                     </Col>
                     <Col md={6} sm={12}>
-                      {renderFormGroup("Phone Number", "phone")}
+                      {renderFormGroup("Phone Number", "phone", "phone")}
                     </Col>
                   </Row>
 
@@ -542,7 +628,6 @@ const formatFileSize = (size) => {
                   </Row>
 
                   <Row>
-                    
                     <Col md={6} sm={12}>
                       {renderFormGroup("State", "state")}
                     </Col>
@@ -797,40 +882,45 @@ const formatFileSize = (size) => {
 
                   <Row>
                     <Col md={12} sm={12}>
-                    <Row>
-  <Col md={6}>
-    {renderFormGroup(
-      "Loan Purpose",
-      "loanPurpose",
-      "select",
-      [
-        { value: "", label: "Select Loan Purpose" },
-        { value: "education", label: "Children's Education" },
-        { value: "medical", label: "Medical Expenses" },
-        { value: "business", label: "Business" },
-        { value: "home", label: "Home" },
-        { value: "other", label: "Other (Specify Below)" },
-      ],
-      formData.loanPurpose, // Controlled component value
-      (e) => handleInputChange(e) // Handle selection
-    )}
-  </Col>
+                      <Row>
+                        <Col md={6}>
+                          {renderFormGroup(
+                            "Loan Purpose",
+                            "loanPurpose",
+                            "select",
+                            [
+                              { value: "", label: "Select Loan Purpose" },
+                              {
+                                value: "education",
+                                label: "Children's Education",
+                              },
+                              { value: "medical", label: "Medical Expenses" },
+                              { value: "business", label: "Business" },
+                              { value: "home", label: "Home" },
+                              {
+                                value: "other",
+                                label: "Other (Specify Below)",
+                              },
+                            ],
+                            formData.loanPurpose, // Controlled component value
+                            (e) => handleInputChange(e) // Handle selection
+                          )}
+                        </Col>
 
-  {/* Show "Other Purpose" input only if "Other" is selected */}
-  {formData.loanPurpose === "other" && (
-    <Col md={6}>
-      {renderFormGroup(
-        "Specify Other Purpose",
-        "loanPurposeOther",
-        "text",
-        [],
-        formData.loanPurposeOther, // Controlled component value
-        (e) => handleInputChange(e) // Handle text input
-      )}
-    </Col>
-  )}
-</Row>
-
+                        {/* Show "Other Purpose" input only if "Other" is selected */}
+                        {formData.loanPurpose === "other" && (
+                          <Col md={6}>
+                            {renderFormGroup(
+                              "Specify Other Purpose",
+                              "loanPurposeOther",
+                              "text",
+                              [],
+                              formData.loanPurposeOther, // Controlled component value
+                              (e) => handleInputChange(e) // Handle text input
+                            )}
+                          </Col>
+                        )}
+                      </Row>
                     </Col>
                   </Row>
 
@@ -892,7 +982,6 @@ const formatFileSize = (size) => {
                     </Col>
                   </Row>
                   <Row>
-                  
                     <Col md={6} sm={12}>
                       {renderFormGroup(
                         "Years with Employer",
@@ -1023,7 +1112,8 @@ const formatFileSize = (size) => {
                           "text",
                           [],
                           newNominee.nomineeName,
-                          (e) => handleNomineesChange("nomineeName", e.target.value)
+                          (e) =>
+                            handleNomineesChange("nomineeName", e.target.value)
                         )}
                         {errors["nominees.name"] && (
                           <div className="text-danger small mt-2">
@@ -1035,10 +1125,11 @@ const formatFileSize = (size) => {
                         {renderFormGroup(
                           "Nominee Phone",
                           "nomineePhone",
-                          "text",
+                          "phone",
                           [],
                           newNominee.nomineePhone,
-                          (e) => handleNomineesChange("nomineePhone", e.target.value)
+                          (e) =>
+                            handleNomineesChange("nomineePhone", e.target.value)
                         )}
                         {errors["nominees.phone"] && (
                           <div className="text-danger small mt-2">
@@ -1055,7 +1146,8 @@ const formatFileSize = (size) => {
                           "email",
                           [],
                           newNominee.nomineeEmail,
-                          (e) => handleNomineesChange("nomineeEmail", e.target.value)
+                          (e) =>
+                            handleNomineesChange("nomineeEmail", e.target.value)
                         )}
                         {errors["nominees.email"] && (
                           <div className="text-danger small mt-2">
@@ -1077,7 +1169,11 @@ const formatFileSize = (size) => {
                             { value: "other", label: "Other" },
                           ],
                           newNominee.nomineeRelationship,
-                          (e) => handleNomineesChange("nomineeRelationship", e.target.value)
+                          (e) =>
+                            handleNomineesChange(
+                              "nomineeRelationship",
+                              e.target.value
+                            )
                         )}
                         {newNominee.nomineeRelationship === "other" && (
                           <div className="mt-2">
@@ -1087,7 +1183,11 @@ const formatFileSize = (size) => {
                               "text",
                               [],
                               newNominee.nomineeOtherRelationship,
-                              (e) => handleNomineesChange("nomineeOtherRelationship", e.target.value)
+                              (e) =>
+                                handleNomineesChange(
+                                  "nomineeOtherRelationship",
+                                  e.target.value
+                                )
                             )}
                           </div>
                         )}
@@ -1102,13 +1202,20 @@ const formatFileSize = (size) => {
                           "text",
                           [],
                           newNominee.nomineeAddress,
-                          (e) => handleNomineesChange("nomineeAddress", e.target.value)
+                          (e) =>
+                            handleNomineesChange(
+                              "nomineeAddress",
+                              e.target.value
+                            )
                         )}
                       </Col>
                     </Row>
                     <Row>
                       <Col md={12} sm={12}>
-                        <label htmlFor="nomineesIdProofType" className="form-label fw-bold text-primary">
+                        <label
+                          htmlFor="nomineesIdProofType"
+                          className="form-label fw-bold text-primary"
+                        >
                           Choose Nominee ID Proof Type
                         </label>
                         {renderFormGroup(
@@ -1122,7 +1229,11 @@ const formatFileSize = (size) => {
                             { value: "voterId", label: "Voter ID" },
                           ],
                           newNominee.nomineeidProofType,
-                          (e) => handleNomineesChange("nomineeidProofType", e.target.value)
+                          (e) =>
+                            handleNomineesChange(
+                              "nomineeidProofType",
+                              e.target.value
+                            )
                         )}
                       </Col>
                     </Row>
@@ -1134,12 +1245,19 @@ const formatFileSize = (size) => {
                           "text",
                           [],
                           newNominee.nomineeidProofNumber,
-                          (e) => handleNomineesChange("nomineeidProofNumber", e.target.value)
+                          (e) =>
+                            handleNomineesChange(
+                              "nomineeidProofNumber",
+                              e.target.value
+                            )
                         )}
                         <small className="form-text text-muted mt-1">
-                          {newNominee.nomineeidProofType === "pan" && "Format: ABCDE1234F"}
-                          {newNominee.nomineeidProofType === "aadhar" && "Format: 1234 5678 9012"}
-                          {newNominee.nomineeidProofType === "voterId" && "Format: ABC1234567"}
+                          {newNominee.nomineeidProofType === "pan" &&
+                            "Format: ABCDE1234F"}
+                          {newNominee.nomineeidProofType === "aadhar" &&
+                            "Format: 1234 5678 9012"}
+                          {newNominee.nomineeidProofType === "voterId" &&
+                            "Format: ABC1234567"}
                         </small>
                         {errors["nominees.idProofNumber"] && (
                           <div className="text-danger small mt-2">
@@ -1148,13 +1266,20 @@ const formatFileSize = (size) => {
                         )}
                       </Col>
                       <Col md={6} sm={12}>
-                        <label htmlFor="nomineesIdProofFile" className="form-label fw-bold text-primary">
+                        <label
+                          htmlFor="nomineesIdProofFile"
+                          className="form-label fw-bold text-primary"
+                        >
                           Upload Nominee ID Proof
                         </label>
                         <Dropzone
-                          onDrop={(acceptedFiles) => handleNomineeFileUpload(acceptedFiles)}
+                          onDrop={(acceptedFiles) =>
+                            handleNomineeFileUpload(acceptedFiles)
+                          }
                           onDropRejected={() => {
-                            alert("Invalid file type or size. Please upload a valid file.");
+                            alert(
+                              "Invalid file type or size. Please upload a valid file."
+                            );
                           }}
                           accept={{ "image/*": [], "application/pdf": [] }}
                           maxFiles={1}
@@ -1165,143 +1290,179 @@ const formatFileSize = (size) => {
                               <div
                                 {...getRootProps()}
                                 className={`dz-message p-4 border-2 border-dashed rounded-3 ${
-                                  isDragActive ? "border-primary bg-primary-10" : "border-secondary"
+                                  isDragActive
+                                    ? "border-primary bg-primary-10"
+                                    : "border-secondary"
                                 }`}
                                 style={{ minHeight: "100px" }}
-      >
-        <input {...getInputProps()} />
-        <div className="text-center">
-          <div className="mb-2">
-            <i
-              className={`bx bx-cloud-upload fs-1 ${
-                isDragActive ? "text-primary" : "text-secondary"
-              }`}
-            />
-          </div>
-          <h6
-            className={`mb-1 ${
-              isDragActive ? "text-primary" : "text-dark"
-            }`}
-          >
-            {isDragActive ? "Drop file here" : "Upload ID Proof"}
-          </h6>
-          <small className="text-muted">
-            Supported formats: JPG, PNG, PDF (Max 2MB)
-          </small>
-        </div>
-      </div>
+                              >
+                                <input {...getInputProps()} />
+                                <div className="text-center">
+                                  <div className="mb-2">
+                                    <i
+                                      className={`bx bx-cloud-upload fs-1 ${
+                                        isDragActive
+                                          ? "text-primary"
+                                          : "text-secondary"
+                                      }`}
+                                    />
+                                  </div>
+                                  <h6
+                                    className={`mb-1 ${
+                                      isDragActive
+                                        ? "text-primary"
+                                        : "text-dark"
+                                    }`}
+                                  >
+                                    {isDragActive
+                                      ? "Drop file here"
+                                      : "Upload ID Proof"}
+                                  </h6>
+                                  <small className="text-muted">
+                                    Supported formats: JPG, PNG, PDF (Max 2MB)
+                                  </small>
+                                </div>
+                              </div>
 
-      {/* Display Image Preview */}
-      {newNominee.nomineeidProofFile && (
-        <div className="mt-3 text-center">
-          <p className="mb-1">
-            <strong>File:</strong> {newNominee.nomineeidProofFile.name} (
-            {newNominee.nomineeidProofFile.formattedSize})
-          </p>
-          {newNominee.nomineeidProofFile.type.startsWith("image/") ? (
-            <img
-              src={newNominee.nomineeidProofFile.preview}
-              alt="ID Proof"
-              className="img-thumbnail"
-              style={{ maxWidth: "100px", height: "auto" }}
-            />
-          ) : (
-            <a
-              href={newNominee.nomineeidProofFile.preview}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-sm btn-primary"
-            >
-              View PDF
-            </a>
-          )}
-        {/* Remove Button */}
-        <div className="mt-2">
-            <button
-              className="btn btn-danger btn-sm"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent Dropzone click
-                removeNomineeFile();
-              }}
-            >
-              <i className="bx bx-trash"></i> Remove File
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )}
-</Dropzone>
+                              {/* Display Image Preview */}
+                              {newNominee.nomineeidProofFile && (
+                                <div className="mt-3 text-center">
+                                  <p className="mb-1">
+                                    <strong>File:</strong>{" "}
+                                    {newNominee.nomineeidProofFile.name} (
+                                    {
+                                      newNominee.nomineeidProofFile
+                                        .formattedSize
+                                    }
+                                    )
+                                  </p>
+                                  {newNominee.nomineeidProofFile.type.startsWith(
+                                    "image/"
+                                  ) ? (
+                                    <img
+                                      src={
+                                        newNominee.nomineeidProofFile.preview
+                                      }
+                                      alt="ID Proof"
+                                      className="img-thumbnail"
+                                      style={{
+                                        maxWidth: "100px",
+                                        height: "auto",
+                                      }}
+                                    />
+                                  ) : (
+                                    <a
+                                      href={
+                                        newNominee.nomineeidProofFile.preview
+                                      }
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="btn btn-sm btn-primary"
+                                    >
+                                      View PDF
+                                    </a>
+                                  )}
+                                  {/* Remove Button */}
+                                  <div className="mt-2">
+                                    <button
+                                      className="btn btn-danger btn-sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation(); // Prevent Dropzone click
+                                        removeNomineeFile();
+                                      }}
+                                    >
+                                      <i className="bx bx-trash"></i> Remove
+                                      File
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </Dropzone>
 
-          {errors["nominees.idProofFile"] && (
-            <div className="text-danger small mt-2">
-              {errors["nominees.idProofFile"]}
-            </div>
-          )}
-        </Col>
-      </Row>
-      <Row className="mt-3">
-        <Col md={12} className="text-center">
-          <Button
-            color="primary"
-            aria-label="Add Nominee"
-            onClick={addNominee}
-          >
-            <i className="bx bx-plus me-1"></i>Add Nominee
-          </Button>
-        </Col>
-      </Row>
-    </div>
+                        {errors["nominees.idProofFile"] && (
+                          <div className="text-danger small mt-2">
+                            {errors["nominees.idProofFile"]}
+                          </div>
+                        )}
+                      </Col>
+                    </Row>
+                    <Row className="mt-3">
+                      <Col md={12} className="text-center">
+                        <Button
+                          color="primary"
+                          aria-label="Add Nominee"
+                          onClick={addNominee}
+                        >
+                          <i className="bx bx-plus me-1"></i>Add Nominee
+                        </Button>
+                      </Col>
+                    </Row>
+                  </div>
 
-    {/* Table to display nominees */}
-    <div className="mt-4">
-      <h5>Nominees List</h5>
-      <Table striped bordered responsive>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Address</th>
-            <th>Relationship</th>
-            <th>ID Proof</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-  {nominees.length === 0 ? (
-    <tr>
-      <td colSpan="5" className="text-center">No nominees added yet.</td>
-    </tr>
-  ) : (
-    nominees.map((nominees, index) => (
-      <tr key={index}>
-        <td>{nominees.nomineeName}</td>
-        <td>{nominees.nomineeAddress}</td>
+                  {/* Table to display nominees */}
+                  <div className="mt-4">
+                    <h5>Nominees List</h5>
+                    <Table striped bordered responsive>
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Address</th>
+                          <th>Relationship</th>
+                          <th>ID Proof</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {nominees.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="text-center">
+                              No nominees added yet.
+                            </td>
+                          </tr>
+                        ) : (
+                          nominees.map((nominees, index) => (
+                            <tr key={index}>
+                              <td>{nominees.nomineeName}</td>
+                              <td>{nominees.nomineeAddress}</td>
 
-        <td>{nominees.nomineeRelationship === "other" ? nominees.nomineeOtherRelationship : nominees.nomineeRelationship}</td>
-        <td>
-          {nominees.nomineeidProofType}
-          {nominees.nomineeidProofFile ? (
-            <a href={nominees.nomineeidProofFile.preview} target="_blank" rel="noopener noreferrer">
-              View ID Proof
-            </a>
-          ) : (
-            "Not Uploaded"
-          )}
-        </td>
-        <td>
-          <Button color="danger" size="sm" onClick={() => removeNominee(index)}>
-            <i className="bx bx-trash"></i> Remove
-          </Button>
-        </td>
-      </tr>
-    ))
-  )}
-</tbody>
-
-      </Table>
-    </div>
-  </Form>
-</TabPane>
+                              <td>
+                                {nominees.nomineeRelationship === "other"
+                                  ? nominees.nomineeOtherRelationship
+                                  : nominees.nomineeRelationship}
+                              </td>
+                              <td>
+                                {nominees.nomineeidProofType}
+                                {nominees.nomineeidProofFile ? (
+                                  <a
+                                    href={nominees.nomineeidProofFile.preview}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    View ID Proof
+                                  </a>
+                                ) : (
+                                  "Not Uploaded"
+                                )}
+                              </td>
+                              <td>
+                                <Button
+                                  color="danger"
+                                  size="sm"
+                                  onClick={() => removeNominee(index)}
+                                >
+                                  <i className="bx bx-trash"></i> Remove
+                                </Button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </Table>
+                  </div>
+                </Form>
+              </TabPane>
               <TabPane tabId={7}>
                 <Form>
                   <Row>
