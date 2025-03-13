@@ -1,151 +1,363 @@
-import React, { useState } from "react";
-import {
-  Accordion, AccordionItem, AccordionHeader, AccordionBody,
-  Row, Col, Label, Input, Button
-} from "reactstrap";
+import React, { useState, useEffect } from "react";
+import { Row, Col, FormGroup, Label, Table, Button, Input } from "reactstrap";
 import Dropzone from "react-dropzone";
 
-const idTypes = ["Aadhar", "PAN", "Driving License", "Voter ID"]; // Fixed ID Types
+const DocumentUpload = ({ onDocumentsChange }) => {
+  const [currentDoc, setCurrentDoc] = useState({
+    type: "",
+    idNumber: "",
+    file: null,
+  });
+  const [documents, setDocuments] = useState([]);
+  const [errors, setErrors] = useState({});
 
-const IdProofSection = ({ idProofs, setIdProofs, openIndex, setOpenIndex }) => {
-  const [errors, setErrors] = useState({}); // Validation errors
+  // Cleanup object URLs when component unmounts or documents change
+  useEffect(() => {
+    return () => {
+      documents.forEach((doc) => {
+        if (doc.file?.preview) URL.revokeObjectURL(doc.file.preview);
+      });
+      if (currentDoc.file?.preview) URL.revokeObjectURL(currentDoc.file.preview);
+    };
+  }, [documents, currentDoc.file]);
 
-  const handleIdProofChange = (index, value) => {
-    const updatedProofs = [...idProofs];
-    updatedProofs[index].type = value;
-    setIdProofs(updatedProofs);
+  // Notify parent component when documents change
+  useEffect(() => {
+    if (typeof onDocumentsChange === "function") {
+      onDocumentsChange(documents);
+    }
+  }, [documents]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setCurrentDoc({ ...currentDoc, [name]: value });
+    setErrors({ ...errors, [name]: null });
   };
 
-  const handleIdProofFiles = (index, files) => {
-    if (files.length === 0) return;
-
-    const newFiles = files.map(file => ({
-      ...file,
-      preview: URL.createObjectURL(file),
-      formattedSize: (file.size / 1024).toFixed(2) + " KB",
-    }));
-
-    const updatedProofs = [...idProofs];
-    updatedProofs[index].files = newFiles; // Replace existing file
-    setIdProofs(updatedProofs);
-
-    // Clear file validation error
-    setErrors(prev => ({ ...prev, [`files${index}`]: "" }));
-
-    if (index < 3) setOpenIndex(index + 1);
-    else setOpenIndex(null);
-  };
-
-  const validateFields = (index) => {
-    const newErrors = { ...errors };
-    const proof = idProofs[index];
-
-    if (!proof.number) {
-      newErrors[`number${index}`] = "ID Number is required";
-    } else if (proof.type === "Aadhar" && !/^\d{12}$/.test(proof.number)) {
-      newErrors[`number${index}`] = "Enter a valid 12-digit Aadhar number";
-    } else if (proof.type === "PAN" && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(proof.number)) {
-      newErrors[`number${index}`] = "Enter a valid PAN (ABCDE1234F)";
-    } else {
-      newErrors[`number${index}`] = "";
+  const handleFileUpload = (acceptedFiles, rejectedFiles) => {
+    if (rejectedFiles?.length > 0) {
+      setErrors({ ...errors, file: "File must be an image or PDF and less than 2MB" });
+      return;
     }
 
-    if (proof.files.length === 0) {
-      newErrors[`files${index}`] = "Upload required";
-    } else {
-      newErrors[`files${index}`] = "";
+    if (acceptedFiles?.length > 0) {
+      const file = acceptedFiles[0];
+      setCurrentDoc({
+        ...currentDoc,
+        file: Object.assign(file, {
+          preview: URL.createObjectURL(file),
+          formattedSize: formatFileSize(file.size),
+        }),
+      });
+      setErrors({ ...errors, file: null });
+    }
+  };
+
+  const formatFileSize = (size) => {
+    if (size < 1024) return `${size} bytes`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  // Validate document number based on document type
+  const validateDocumentNumber = (type, idNumber) => {
+    switch (type) {
+      case "pan":
+        return /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(idNumber);
+      case "aadhar":
+        return /^\d{4}\s?\d{4}\s?\d{4}$/.test(idNumber);
+      case "voterId":
+        return /^[A-Z]{3}[0-9]{7}$/.test(idNumber);
+      case "drivingLicense":
+        return /^[A-Z]{2}\d{13}$/.test(idNumber);
+      default:
+        return false;
+    }
+  };
+
+  const validateCurrentDoc = () => {
+    const errs = {};
+
+    // Validate document type
+    if (!currentDoc.type) {
+      errs.type = "Please select an ID proof type";
     }
 
-    setErrors(newErrors);
+    // Validate document number
+    if (!currentDoc.idNumber) {
+      errs.idNumber = "Please enter the document number";
+    } else if (!validateDocumentNumber(currentDoc.type, currentDoc.idNumber)) {
+      errs.idNumber = `Invalid ${currentDoc.type.toUpperCase()} number format`;
+    }
 
-    return Object.values(newErrors).every(error => error === "");
+    // Validate file
+    if (!currentDoc.file) {
+      errs.file = "Please upload a document file";
+    }
+
+    return errs;
   };
 
-  const toggleAccordion = (index) => {
-    setOpenIndex(openIndex === index ? null : index);
+  const handleAddDocument = () => {
+    const errs = validateCurrentDoc();
+    if (Object.keys(errs).length > 0) return setErrors(errs);
+
+    setDocuments([...documents, currentDoc]);
+    setCurrentDoc({ type: "", idNumber: "", file: null });
+    setErrors({});
   };
+
+  const handleRemoveDocument = (index) => {
+    const newDocs = documents.filter((_, i) => i !== index);
+    setDocuments(newDocs);
+  };
+
+  const handleEditDocument = (index) => {
+    const docToEdit = documents[index];
+    setCurrentDoc(docToEdit);
+    handleRemoveDocument(index);
+  };
+
+  const renderFilePreview = (file) => {
+    if (!file) return null;
+    return file.type.startsWith("image/") ? (
+      <img
+        src={file.preview}
+        alt={file.name}
+        className="img-thumbnail"
+        style={{ width: "80px", height: "auto" }}
+        aria-label="Document preview"
+      />
+    ) : (
+      <a href={file.preview} target="_blank" rel="noopener noreferrer" aria-label="View PDF">
+        View PDF
+      </a>
+    );
+  };
+
+  const remainingDocs = 3 - documents.length;
 
   return (
-    <div className="mt-2">
-      <h6 className="text-primary text-center fw-semibold">Upload ID Proofs (Max 4)</h6>
-      <Accordion open={openIndex?.toString()} toggle={() => {}}>
-        {idTypes.map((idType, index) => (
-          <AccordionItem key={index} className="mb-1 border shadow-sm rounded">
-            <AccordionHeader targetId={index.toString()} onClick={() => toggleAccordion(index)}>
-              <span className="fw-semibold" style={{ fontSize: "12px" }}>
-                {idType} {idProofs[index]?.number ? ` - ${idProofs[index]?.number}` : ""}
-              </span>
-            </AccordionHeader>
-            <AccordionBody accordionId={index.toString()} className="p-2">
-              <Row>
-                <Col xs={12}>
-                  <Label className="fw-bold" style={{ fontSize: "11px" }}>{idType} Number</Label>
-                  <Input 
-                    type="text" 
-                    className={`form-control-sm ${errors[`number${index}`] ? "is-invalid" : ""}`}
-                    value={idProofs[index]?.number || ""}
-                    onChange={(e) => handleIdProofChange(index, { ...idProofs[index], number: e.target.value, type: idType })}
-                    onBlur={() => validateFields(index)}
-                    style={{ fontSize: "11px" }}
-                  />
-                  {errors[`number${index}`] && <div className="text-danger" style={{ fontSize: "10px" }}>{errors[`number${index}`]}</div>}
-                </Col>
-              </Row>
+    <div className="document-upload container">
+      <Row className="mb-4">
+        <Col xs={12} md={4}>
+          <FormGroup>
+            <Label for="documentType">ID Proof Type</Label>
+            <select
+  id="documentType"
+  name="type"
+  value={currentDoc.type}
+  onChange={handleChange}
+  className={`form-select ${errors.type ? "is-invalid" : ""}`}
+  aria-invalid={!!errors.type}
+  aria-describedby="documentTypeError"
+>
+  <option value="">Select Document</option>
+  {["pan", "aadhar", "voterId", "drivingLicense"].map((docType) => (
+    <option key={docType} value={docType} disabled={documents.some((doc) => doc.type === docType)}>
+      {docType === "pan"
+        ? "PAN Card"
+        : docType === "aadhar"
+        ? "Aadhar Card"
+        : docType === "voterId"
+        ? "Voter ID"
+        : "Driving License"}
+    </option>
+  ))}
+</select>
+            {errors.type && (
+              <div id="documentTypeError" className="invalid-feedback">
+                {errors.type}
+              </div>
+            )}
+          </FormGroup>
+        </Col>
 
-              {/* Dropzone for File Upload */}
-              <Label className="mt-1 fw-bold" style={{ fontSize: "10px" }}>Upload {idType} File</Label>
-              <Dropzone
-                onDrop={(files) => handleIdProofFiles(index, files)}
-                accept={{ "application/pdf": [], "image/jpeg": [], "image/png": [] }}
-                maxFiles={1}
-                maxSize={2 * 1024 * 1024} // 2MB limit
-              >
-                {({ getRootProps, getInputProps }) => (
-                  <div
-                    {...getRootProps()}
-                    className={`dropzone p-1 border rounded text-center bg-light d-flex align-items-center justify-content-center ${errors[`files${index}`] ? "border-danger" : ""}`}
-                    style={{ cursor: "pointer", height: "40px", width: "100%", borderStyle: "dashed", fontSize: "10px" }}
-                  >
-                    <input {...getInputProps()} />
-                    <i className="bx bx-upload fs-6 text-primary me-1" />
-                    <small className="text-muted">PDF, JPG, PNG</small>
+        <Col xs={12} md={4}>
+          <FormGroup>
+            <Label for="documentNumber">{currentDoc.type?`${currentDoc.type.toUpperCase()} `:"Document "}Number</Label>
+            <Input
+              id="documentNumber"
+              name="idNumber"
+              value={currentDoc.idNumber}
+              onChange={handleChange}
+              className={`form-control ${errors.idNumber ? "is-invalid" : ""}`}
+              placeholder={
+                currentDoc.type === "pan"
+                  ? "ABCDE1234F"
+                  : currentDoc.type === "aadhar"
+                  ? "1234 5678 9012"
+                  : currentDoc.type === "voterId"
+                  ? "ABC1234567"
+                  : currentDoc.type === "drivingLicense"
+                  ? "DL1234567890123"
+                  : ""
+              }
+              aria-invalid={!!errors.idNumber}
+              aria-describedby="documentNumberError"
+            />
+            {errors.idNumber && (
+              <div id="documentNumberError" className="invalid-feedback">
+                {errors.idNumber}
+              </div>
+            )}
+          </FormGroup>
+        </Col>
+
+        <Col xs={12} md={4}>
+          <FormGroup>
+            <Label>Upload Document</Label>
+            <Dropzone
+              onDrop={handleFileUpload}
+              accept={{ "image/*": [], "application/pdf": [] }}
+              maxFiles={1}
+              maxSize={2 * 1024 * 1024}
+            >
+              {({ getRootProps, getInputProps, isDragActive }) => (
+                <div
+                  {...getRootProps()}
+                  className={`dropzone-border ${isDragActive ? "active" : ""} ${
+                    errors.file ? "is-invalid" : ""
+                  }`}
+                  style={{
+                    border: "2px dashed #dee2e6",
+                    borderRadius: "0.375rem",
+                    padding: "1.5rem",
+                    textAlign: "center",
+                    cursor: "pointer",
+                    transition: "border-color 0.3s ease",
+                    ...(isDragActive && {
+                      borderColor: "#0d6efd",
+                      backgroundColor: "rgba(13, 110, 253, 0.05)",
+                    }),
+                  }}
+                  aria-invalid={!!errors.file}
+                  aria-describedby="fileUploadError"
+                >
+                  <input {...getInputProps()} />
+                  <div className="dropzone-content">
+                    <i className="bx bx-cloud-upload fs-3"></i>
+                    <p className="mb-0">
+                      {isDragActive ? "Drop file here" : "Drag & drop or click to upload"}
+                    </p>
+                    <small className="text-muted">Max file size: 2MB</small>
                   </div>
-                )}
-              </Dropzone>
-
-              {/* Validation Error */}
-              {errors[`files${index}`] && <div className="text-danger mt-1" style={{ fontSize: "10px" }}>{errors[`files${index}`]}</div>}
-
-              {/* File Preview */}
-              {idProofs[index]?.files?.length > 0 && (
-                <div className="mt-1 d-flex flex-wrap gap-1">
-                  {idProofs[index].files.map((file, fileIndex) => (
-                    <div key={fileIndex} className="p-1 border rounded d-flex align-items-center gap-1 shadow-sm">
-                      <a href={file.preview} target="_blank" rel="noopener noreferrer" className="text-center">
-                        <i className="bx bx-file fs-6 text-primary"></i>
-                        <small className="d-block text-muted">{file.formattedSize}</small>
-                      </a>
-                      <button
-                        type="button"
-                        className="btn btn-link btn-sm text-danger p-0"
-                        onClick={() => {
-                          const updatedProofs = [...idProofs];
-                          updatedProofs[index].files = [];
-                          setIdProofs(updatedProofs);
-                        }}
-                      >
-                        <i className="bx bx-x"></i>
-                      </button>
-                    </div>
-                  ))}
                 </div>
               )}
-            </AccordionBody>
-          </AccordionItem>
-        ))}
-      </Accordion>
+            </Dropzone>
+            {errors.file && (
+              <div id="fileUploadError" className="invalid-feedback d-block">
+                {errors.file}
+              </div>
+            )}
+          </FormGroup>
+        </Col>
+      </Row>
+
+      {currentDoc.file && (
+        <Row className="mb-4">
+          <Col xs={12}>
+            <div
+              className="file-preview d-flex align-items-center gap-3 flex-wrap"
+              style={{
+                padding: "1rem",
+                border: "1px solid #dee2e6",
+                borderRadius: "0.375rem",
+                backgroundColor: "#f8f9fa",
+              }}
+            >
+              {renderFilePreview(currentDoc.file)}
+              <div>
+                <p className="mb-0">{currentDoc.file.name}</p>
+                <small className="text-muted">{currentDoc.file.formattedSize}</small>
+              </div>
+              <Button
+                color="danger"
+                size="sm"
+                onClick={() => setCurrentDoc({ ...currentDoc, file: null })}
+                aria-label="Remove file"
+              >
+                Remove File
+              </Button>
+            </div>
+          </Col>
+        </Row>
+      )}
+
+      <Row className="mb-4">
+        <Col xs={12}>
+          <Button
+            color="primary"
+            onClick={handleAddDocument}
+            disabled={!currentDoc.type || !currentDoc.idNumber || !currentDoc.file}
+            aria-label="Add document"
+          >
+            {currentDoc.file ? "Add Document" : "Upload & Add Document"}
+          </Button>
+        </Col>
+      </Row>
+
+      {documents.length > 0 && (
+        <Row>
+          <Col xs={12}>
+            <Table striped bordered responsive>
+              <thead className="bg-light">
+                <tr>
+                  <th>Document Type</th>
+                  <th>Document Number</th>
+                  <th>Preview</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {documents.map((doc, index) => (
+                  <tr key={index}>
+                    <td className="text-capitalize">{doc.type}</td>
+                    <td>{doc.idNumber}</td>
+                    <td>{renderFilePreview(doc.file)}</td>
+                    <td>
+                      <Button
+                        color="warning"
+                        size="sm"
+                        onClick={() => handleEditDocument(index)}
+                        className="me-2"
+                        aria-label="Edit document"
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        color="danger"
+                        size="sm"
+                        onClick={() => handleRemoveDocument(index)}
+                        aria-label="Remove document"
+                      >
+                        Remove
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </Col>
+        </Row>
+      )}
+
+      {documents.length < 3 && (
+        <Row>
+          <Col xs={12}>
+            {/* <div className="alert alert-warning">
+              {remainingDocs > 0 && (
+                <div>
+                  Please upload at least {remainingDocs} more{" "}
+                  {remainingDocs === 1 ? "document" : "documents"}.
+                </div>
+              )}
+            </div> */}
+          </Col>
+        </Row>
+      )}
     </div>
   );
 };
 
-export default IdProofSection;
+export default DocumentUpload;

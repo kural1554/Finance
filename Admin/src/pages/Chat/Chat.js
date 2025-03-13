@@ -283,7 +283,7 @@ function DatatableTables() {
                         <Card>
                         <CardHeader className="d-flex justify-content-between align-items-center">
                                 <h4 className="mb-0">Loan Management</h4>
-                                <Button color="primary" onClick={() => navigate('/form-wizard')}>
+                                <Button color="primary" onClick={() => navigate('/loanform')}>
                                 <FeatherIcon icon="plus-circle" className="me-2" />New Loan</Button>
                             </CardHeader>
                             <CardBody>

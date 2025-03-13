@@ -67,8 +67,11 @@ import AdvancedPlugins from "../pages/Forms/AdvancedPlugins";
 import FormEditors from "../pages/Forms/FormEditors";
 import FormUpload from "../pages/Forms/FormUpload";
 import FormWizard from "../pages/Forms/FormWizard";
+import Loanform from "../pages/Forms/FormWizard/loanform";
 import FormMask from "../pages/Forms/FormMask";
-
+import EmployeeRegForm from "../pages/Forms/EmployeeForm/EmployeeRegForm"
+import EmployeeListPage from "../pages/Forms/EmployeeForm/EmployeeListPage"
+import EmployeeEdit from "../pages/Forms/EmployeeForm/EmployeeEdit"
 
 
 //Charts
@@ -100,6 +103,7 @@ import TwoStepVerfication from "../pages/AuthenticationInner/TwoStepVerfication"
 import AuthLogout from "../pages/AuthenticationInner/Logout";
 import UserProfile from "../pages/Authentication/user-profile";
 import RangeSlider from "../pages/Extended/RangeSlider/Index";
+import { components } from "react-select";
 
 const userRoutes = [
   //dashboard
@@ -167,7 +171,13 @@ const userRoutes = [
   { path: "/form-validation", component: <FormValidation /> },
   { path: "/form-advanced", component: <AdvancedPlugins /> },
   { path: "/form-uploads", component: <FormUpload /> },
-  { path: "/form-wizard", component: <FormWizard /> },
+  { path: "/loanform", component: <Loanform/> },
+  { path: "/employeeregform", component: <EmployeeRegForm/> },
+  { path: "/employeelistpage", component: <EmployeeListPage/> },
+  {path:"/employeeedit", component: <EmployeeEdit/>},
+
+  
+  // { path: "/form-wizard", component: <FormWizard /> },
   { path: "/form-mask", component: <FormMask /> },
 
 
