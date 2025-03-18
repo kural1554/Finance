@@ -182,10 +182,18 @@ const SidebarContent = props => {
                 <span>{props.t("Loan Management")}</span>
               </Link>
             </li>
+            {/* employeelistpage */}
             <li>
               <Link to="/employeelistpage" className="">
               <i className='bx bxs-user'></i>{" "}
                 <span>{props.t("Employee Form")}</span>
+              </Link>
+            </li>
+            {/* calculater */}
+            <li>
+              <Link to="/emi-calculator" className="">
+              <i className='bx bxs-calculator'></i>{" "}
+                <span>{props.t("Calculator")}</span>
               </Link>
             </li>
               

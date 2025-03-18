@@ -14,8 +14,8 @@ import Calendar from "../pages/Calendar/index";
 import Chat from "../pages/Chat/Chat";
 import Status from "../pages/Chat/status";
 
-
-
+//Calculator
+import EmiCalculater from "../pages/Calculator/EmiCalculater";
 
 //Contact
 import ContactsGrid from "../pages/Contacts/contacts-grid";
@@ -123,7 +123,8 @@ const userRoutes = [
   //Chat
   { path: "/apps-chat", component: <Chat /> },
   { path: "/status", component: <Status /> },
-
+  //Calendar
+  { path: "/emi-calculator", component: <EmiCalculater /> },
  
 
   //Contact
