@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'loans',
     'applicants',
     'banking',
-  
+    'cashflow',
     'nominees',
     'rest_framework',
     'corsheaders'
@@ -87,7 +87,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'spkfinancedatabase',
         'USER': 'postgres',
-        'PASSWORD': 'bharath',
+        'PASSWORD': 'spk',
         'HOST': 'localhost',  # or the database server IP
         'PORT': '5432', 
     }
@@ -129,7 +129,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR,'spkproject','static')]
+#STATICFILES_DIRS = [os.path.join(BASE_DIR,'spkproject','static')]
 
 # ✅ Media files (Uploaded Images)
 MEDIA_URL = '/media/'  # URL to access media files

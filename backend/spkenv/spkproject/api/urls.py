@@ -6,4 +6,5 @@ urlpatterns = [
     path('banking/', include('banking.urls')),# Load banking's API routes
     path('nominees/', include('nominees.urls')), 
     path('employees/', include('employees.urls')), 
+    path('cashflow/', include('cashflow.urls')),
 ]
