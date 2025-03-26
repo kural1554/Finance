@@ -4,4 +4,5 @@ from .models import Cashflow
 class CashflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cashflow
-        fields = '__all__'
+        fields = ['id', 'date', 'income_amount', 'outgoing_amount', 'is_deleted']
+        read_only_fields = ['is_deleted']  # Prevent users from manually modifying this field
