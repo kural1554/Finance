@@ -1,13 +1,13 @@
 // constants/formConfig.js
 export const formTabs = [
         { id: 1, title: "Personal Details", icon: "bx-user" },
-        { id: 2, title: "Loan Details", icon: "bx-rupee" },
-        { id: 3, title: "Employment Details", icon: "bx-briefcase" },
-        { id: 4, title: "Bank Details", icon: "mdi mdi-bank" },
-        { id: 5, title: "Property Details", icon: "bx-home" },
-        { id: 6, title: "References", icon: "bx-group" },
-        { id: 7, title: "Agreement", icon: "bx-check-shield" },
-        { id: 8, title: "Final Review", icon: "bx-check-circle" },
+        // { id: 2, title: "Loan Details", icon: "bx-rupee" },
+        { id: 2, title: "Employment Details", icon: "bx-briefcase" },
+        { id: 3, title: "Bank Details", icon: "mdi mdi-bank" },
+        { id: 4, title: "Property Details", icon: "bx-home" },
+        { id: 5, title: "References", icon: "bx-group" },
+        // { id: 7, title: "Agreement", icon: "bx-check-shield" },
+        // { id: 8, title: "Final Review", icon: "bx-check-circle" },
       
       
    
@@ -28,14 +28,14 @@ export const formTabs = [
     state: "",
     postalCode: "",
   
-    // Loan Details
-    loanAmount: "",
-    loanTerm: "",
-    loanTermType: "",
-    interestRate: "",
-    loanPurpose: "",
-    loanPurposeOther: "",
-    repaymentSource: "",
+    // // Loan Details
+    // loanAmount: "",
+    // loanTerm: "",
+    // loanTermType: "",
+    // interestRate: "",
+    // loanPurpose: "",
+    // loanPurposeOther: "",
+    // repaymentSource: "",
   
     // Employment Details
     employmentType: "",
@@ -62,18 +62,18 @@ export const formTabs = [
     // References (Nominees)
     nominees: [],
   
-    // Agreement
-    agreeTerms: false,
-    agreeCreditCheck: false,
-    agreeDataSharing: false,
+    // // Agreement
+    // agreeTerms: false,
+    // agreeCreditCheck: false,
+    // agreeDataSharing: false,
   
-    // Final Review
-    translatorName: "",
-    translatorPlace: "",
-    LoanRegDate:new Date().toISOString().split("T")[0],
-    remarks: "",
+    // // Final Review
+    // translatorName: "",
+    // translatorPlace: "",
+    // LoanRegDate:new Date().toISOString().split("T")[0],
+    // remarks: "",
   
     // File Uploads
-    passportPhoto: null,
-    idProofFile: [],
+    // passportPhoto: null,
+    // idProofFile: [],
   };

@@ -78,8 +78,10 @@ import EmployeeEdit from "../pages/Forms/EmployeeForm/EmployeeEdit"
 import Apexchart from "../pages/Charts/Apexcharts";
 import EChart from "../pages/Charts/EChart";
 import ChartjsChart from "../pages/Charts/ChartjsChart";
-
-
+//LoanProcess
+import LoanProcess from "../pages/LoanProcess/LoanProcess";
+//ApprovalStatus
+import ApprovalStatus from "../pages/ApprovalStatus/ApprovalStatus";
 
 // Maps
 import MapsGoogle from "../pages/Maps/MapsGoogle";
@@ -131,7 +133,11 @@ const userRoutes = [
   { path: "/contacts-grid", component: <ContactsGrid /> },
   { path: "/contacts-list", component: <ContactsList /> },
   { path: "/contacts-profile", component: <ContactsProfile /> },
+//ApprovalStatus
+{path:"/approval-status",component:<ApprovalStatus/>},
 
+//LoanProcess
+{path:"/loan-process",component:<LoanProcess/>},
  
 
   //Utility
@@ -175,7 +181,7 @@ const userRoutes = [
   { path: "/loanform", component: <Loanform/> },
   { path: "/employeeregform", component: <EmployeeRegForm/> },
   { path: "/employeelistpage", component: <EmployeeListPage/> },
-  {path:"/employeeedit", component: <EmployeeEdit/>},
+  {path:"/employeeedit/:employeeID", component: <EmployeeEdit/>},
 
   
   // { path: "/form-wizard", component: <FormWizard /> },

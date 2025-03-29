@@ -112,3 +112,5 @@ class PropertyDetails(models.Model):
 
     def __str__(self):
         return f"{self.property_type} - LoanID: {self.applicant.loan_id}"
+    def __str__(self):
+        return f"Applicant: {self.get_loan_id()}"

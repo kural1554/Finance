@@ -263,12 +263,12 @@ const LoanApplicationForm = () => {
       return;
     }
 
-    setLoanDetails({
-      initialLoanAmount: formData.loanAmount,
-      initialLoanTerm: formData.loanTerm,
-      initialTermType: formData.loanTermType,
-      initialInterestRate: formData.interestRate,
-    });
+    // setLoanDetails({
+    //   initialLoanAmount: formData.loanAmount,
+    //   initialLoanTerm: formData.loanTerm,
+    //   initialTermType: formData.loanTermType,
+    //   initialInterestRate: formData.interestRate,
+    // });
 
     setScheduleModalOpen(true);
   };
@@ -342,7 +342,7 @@ const LoanApplicationForm = () => {
       console.log("Final JSON Payload:", finalPayload);
   
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/applicants/", {
+        const response = await fetch("http://127.0.0.1:8080/api/applicants/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -496,13 +496,13 @@ const LoanApplicationForm = () => {
             >
               {[
                 { tooltip: "Personal Details", icon: "bx-user" },
-                { tooltip: "Loan Details", icon: "bx bx-rupee" },
+                // { tooltip: "Loan Details", icon: "bx bx-rupee" },
                 { tooltip: "Employment Details", icon: "bx-briefcase" },
                 { tooltip: "Bank Details", icon: "mdi mdi-bank" },
                 { tooltip: "Property Details", icon: "bx-home" },
                 { tooltip: "References", icon: "bx-group" },
-                { tooltip: "Agreement", icon: "bx-check-shield" },
-                { tooltip: "Final Review", icon: "bx-check-circle" },
+                // { tooltip: "Agreement", icon: "bx-check-shield" },
+                // { tooltip: "Final Review", icon: "bx-check-circle" },
               ].map(({ tooltip, icon }, index) => (
                 <NavItem
                   key={index}
@@ -537,13 +537,13 @@ const LoanApplicationForm = () => {
                   {activeTab &&
                     [
                       "Personal Details",
-                      "Loan Details",
+                      // "Loan Details",
                       "Employment Details",
                       "Bank Details",
                       "Property Details",
                       "References",
-                      "Agreement",
-                      "Final Review",
+                      // "Agreement",
+                      // "Final Review",
                     ][activeTab - 1]}
                 </h5>
                 <p className="card-title-desc">
@@ -645,7 +645,7 @@ const LoanApplicationForm = () => {
               </TabPane>
 
               {/* Tab 2: Loan Details */}
-              <TabPane tabId={2}>
+              {/* <TabPane tabId={2}>
                 <Form>
                   <Row>
                     <Col md={6} sm={12}>
@@ -711,8 +711,8 @@ const LoanApplicationForm = () => {
                   </Row>
                   <Row>
                     {" "}
-                    {/* Show "Other Purpose" input only if "Other" is selected */}
-                    {formData.loanPurpose === 5 && (
+                   
+                    {formData.loanPurpose === 5 && ( //Show "Other Purpose" input only if "Other" is selected
                       <Col md={6} sm={12}>
                         {renderFormGroup(
                           "Specify Other Purpose",
@@ -734,7 +734,7 @@ const LoanApplicationForm = () => {
                     </Col>
                   </Row>
 
-                  {/* Modal for Loan Repayment Schedule */}
+                  
                   <Modal
                     isOpen={scheduleModalOpen}
                     toggle={() => setScheduleModalOpen(false)}
@@ -773,9 +773,9 @@ const LoanApplicationForm = () => {
                     </ModalFooter>
                   </Modal>
                 </Form>
-              </TabPane>
+              </TabPane> */}
               {/* Tab 3: Employment Details */}
-              <TabPane tabId={3}>
+              <TabPane tabId={2}>
                 <Form>
                   <Row className="align-items-center mb-3">
                     <Col md={6} sm={12}>
@@ -817,7 +817,7 @@ const LoanApplicationForm = () => {
               </TabPane>
 
               {/* Tab 4: Bank Details */}
-              <TabPane tabId={4}>
+              <TabPane tabId={3}>
                 <Form>
                   <Row className="mt-4">
                     <Col md={6} sm={12}>
@@ -859,7 +859,7 @@ const LoanApplicationForm = () => {
               </TabPane>
 
               {/* Tab 5: Property Details */}
-              <TabPane tabId={5}>
+              <TabPane tabId={4}>
                 <Form>
                   <Row>
                     <Col md={6} sm={12}>
@@ -903,7 +903,7 @@ const LoanApplicationForm = () => {
               </TabPane>
 
               {/* Tab 6: References */}
-              <TabPane tabId={6}>
+              <TabPane tabId={5}>
                 <Form>
                 <Row>
                   <Col className="col-12">
@@ -1368,7 +1368,7 @@ const LoanApplicationForm = () => {
                   </div>
                 </Form>
               </TabPane>
-              <TabPane tabId={7}>
+              {/* <TabPane tabId={7}>
                 <Form>
                   <Row>
                     <Col md={12}>
@@ -1456,13 +1456,13 @@ const LoanApplicationForm = () => {
                     </Col>
                   </Row>
                 </Form>
-              </TabPane>
-              <TabPane tabId={8}>
+              </TabPane> */}
+              {/* <TabPane tabId={8}>
                 <Row>
                   <Col className="col-12">
                     <CardBody className="position-relative">
-                      {/* Preview images in a circular frame */}
-                      <div
+                      
+                      <div // Preview images in a circular frame 
                         className="position-absolute"
                         style={{
                           top: "40px",
@@ -1479,8 +1479,8 @@ const LoanApplicationForm = () => {
                             key={i}
                             className="d-flex flex-column align-items-center"
                           >
-                            {/* Circular Image Preview */}
-                            <img
+                            
+                            <img // Circular Image Preview
                               src={f.preview}
                               alt={f.name}
                               width="80"
@@ -1536,8 +1536,8 @@ const LoanApplicationForm = () => {
                                 >
                                   <input {...getInputProps()} />
                                   <div className="d-flex flex-column align-items-center">
-                                    {/* Placeholder Circle */}
-                                    <div
+                                    
+                                    <div // Placeholder Circle 
                                       className="rounded-circle d-flex align-items-center justify-content-center border"
                                       style={{
                                         width: "80px",
@@ -1613,9 +1613,9 @@ const LoanApplicationForm = () => {
                     </Col>
                   </Row>
                 </Form>
-              </TabPane>
+              </TabPane> */}
 
-              <TabPane tabId={9}>
+              <TabPane tabId={6}>
                 <div className="text-center mt-3">
                   <h5>Application Submitted Successfully</h5>
                   <p>You can download your form below.</p>
@@ -1637,8 +1637,8 @@ const LoanApplicationForm = () => {
                   </div> 
                 </ModalBody>
                 <ModalFooter className="d-flex flex-wrap justify-content-between">
-                  {/* Back Button - Full width on small screens */}
-                  <Button
+                  
+                  <Button // Back Button - Full width on small screens
                     color="secondary"
                     onClick={toggleModal}
                     className="w-100 w-md-auto"
@@ -1646,8 +1646,8 @@ const LoanApplicationForm = () => {
                     <i className="bx bx-arrow-back me-1"></i> Back
                   </Button>
 
-                  {/* Print Button - Full width on small screens */}
-                  <Button
+                  
+                  <Button // Print Button - Full width on small screens
                     color="primary"
                     onClick={handlePrint}
                     className="w-100 w-md-auto mt-2 mt-md-0"
@@ -1671,7 +1671,7 @@ const LoanApplicationForm = () => {
               </li>
 
               <li className="next">
-                {activeTab === 8 ? (
+                {activeTab === 5 ? (
                   <div className="d-flex flex-wrap gap-3">
                     <Button
                       color="success"
@@ -1689,7 +1689,7 @@ const LoanApplicationForm = () => {
                       <i className="bx bx-search-alt ms-1"></i> Preview Form
                     </Button>
                   </div>
-                ) : activeTab === 9 ? (
+                ) : activeTab === 5 ? (
                   <PDFDownloadLink
                     document={<PDFPreview formData={formData} />} // PDF Document to download
                     fileName="Loan_Application.pdf"

@@ -82,37 +82,37 @@ export const validateForm = (activeTab, formData, setErrors, idProofFile) => {
       isValid = false;
     }}
   // Tab 2: Loan Details
-  if (activeTab === 2) {
-    if (isEmpty(formData.loanAmount)) {
-      newErrors.loanAmount = "Loan Amount is required.";
-      isValid = false;
-    } else if (formData.loanAmount <= 0) {
-      newErrors.loanAmount = "Loan Amount must be greater than 0.";
-      isValid = false;
-    }
-    if (isEmpty(formData.loanTerm)) {
-      newErrors.loanTerm = "Loan Term is required.";
-      isValid = false;
-    } else if (formData.loanTerm <= 0) {
-      newErrors.loanTerm = "Loan Term must be greater than 0.";
-      isValid = false;
-    }
-    if (isEmpty(formData.loanTermType)) {
-      newErrors.loanTermType = "Loan Term Type is required.";
-      isValid = false;
-    }
-    if (isEmpty(formData.interestRate)) {
-      newErrors.interestRate = "Interest Rate is required.";
-      isValid = false;
-    } else if (formData.interestRate <= 0) {
-      newErrors.interestRate = "Interest Rate must be greater than 0.";
-      isValid = false;
-    }
-    if (formData.loanPurpose === "other" && isEmpty(formData.loanPurposeOther)) {
-      newErrors.loanPurposeOther = "Please specify the loan purpose.";
-      isValid = false;
-    }
-  }
+  // if (activeTab === 2) {
+  //   if (isEmpty(formData.loanAmount)) {
+  //     newErrors.loanAmount = "Loan Amount is required.";
+  //     isValid = false;
+  //   } else if (formData.loanAmount <= 0) {
+  //     newErrors.loanAmount = "Loan Amount must be greater than 0.";
+  //     isValid = false;
+  //   }
+  //   if (isEmpty(formData.loanTerm)) {
+  //     newErrors.loanTerm = "Loan Term is required.";
+  //     isValid = false;
+  //   } else if (formData.loanTerm <= 0) {
+  //     newErrors.loanTerm = "Loan Term must be greater than 0.";
+  //     isValid = false;
+  //   }
+  //   if (isEmpty(formData.loanTermType)) {
+  //     newErrors.loanTermType = "Loan Term Type is required.";
+  //     isValid = false;
+  //   }
+  //   if (isEmpty(formData.interestRate)) {
+  //     newErrors.interestRate = "Interest Rate is required.";
+  //     isValid = false;
+  //   } else if (formData.interestRate <= 0) {
+  //     newErrors.interestRate = "Interest Rate must be greater than 0.";
+  //     isValid = false;
+  //   }
+  //   if (formData.loanPurpose === "other" && isEmpty(formData.loanPurposeOther)) {
+  //     newErrors.loanPurposeOther = "Please specify the loan purpose.";
+  //     isValid = false;
+  //   }
+  // }
 
   // Tab 3: Employment Details
   if (activeTab === 3) {
@@ -250,32 +250,32 @@ export const validateForm = (activeTab, formData, setErrors, idProofFile) => {
   }
 
   // Tab 7: Agreement
-  if (activeTab === 7) {
-    if (!formData.agreeTerms) {
-      newErrors.agreeTerms = "You must agree to the terms and conditions.";
-      isValid = false;
-    }
-    if (!formData.agreeCreditCheck) {
-      newErrors.agreeCreditCheck = "You must agree to a credit check.";
-      isValid = false;
-    }
-    if (!formData.agreeDataSharing) {
-      newErrors.agreeDataSharing = "You must agree to data sharing.";
-      isValid = false;
-    }
-  }
+  // if (activeTab === 7) {
+  //   if (!formData.agreeTerms) {
+  //     newErrors.agreeTerms = "You must agree to the terms and conditions.";
+  //     isValid = false;
+  //   }
+  //   if (!formData.agreeCreditCheck) {
+  //     newErrors.agreeCreditCheck = "You must agree to a credit check.";
+  //     isValid = false;
+  //   }
+  //   if (!formData.agreeDataSharing) {
+  //     newErrors.agreeDataSharing = "You must agree to data sharing.";
+  //     isValid = false;
+  //   }
+  // }
 
   // Tab 8: Final Review
-  if (activeTab === 8) {
-    if (isEmpty(formData.translatorName)) {
-      newErrors.translatorName = "Translator Name is required.";
-      isValid = false;
-    }
-    if (isEmpty(formData.translatorPlace)) {
-      newErrors.translatorPlace = "please Specify current place";
-      isValid = false;
-    }
-  }
+  // if (activeTab === 8) {
+  //   if (isEmpty(formData.translatorName)) {
+  //     newErrors.translatorName = "Translator Name is required.";
+  //     isValid = false;
+  //   }
+  //   if (isEmpty(formData.translatorPlace)) {
+  //     newErrors.translatorPlace = "please Specify current place";
+  //     isValid = false;
+  //   }
+  // }
 
   // Set errors and return validation status
   setErrors(newErrors);
