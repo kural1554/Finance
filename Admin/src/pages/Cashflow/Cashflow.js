@@ -14,25 +14,27 @@ function Cashflow() {
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [editingId, setEditingId] = useState(null); // Track edit mode
+    const [editingId, setEditingId] = useState(null);
 
-    const API_URL = "http://127.0.0.1:8080/api/cashflow/";
+    // API base URL from .env
+    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ;
+    const cashflowURL = `${API_BASE_URL}/cashflow/`;
 
-    // Fetch data from API
     useEffect(() => {
-        setLoading(true);
-        axios.get(API_URL)
-            .then((response) => {
+        const fetchCashflows = async () => {
+            setLoading(true);
+            try {
+                const response = await axios.get(cashflowURL);
                 setCashflows(response.data);
                 setLoading(false);
-            })
-            .catch((error) => {
+            } catch (error) {
                 setError("Failed to fetch cashflow data.");
                 setLoading(false);
-            });
-    }, []);
+            }
+        };
+        fetchCashflows();
+    }, [cashflowURL]);
 
-    // Handle form submission (Create or Update)
     const handleSubmit = async (event) => {
         event.preventDefault();
 
@@ -45,19 +47,18 @@ function Cashflow() {
         try {
             if (editingId) {
                 // Update existing record
-                await axios.put(`${API_URL}${editingId}/`, formData);
+                await axios.put(`${cashflowURL}${editingId}/`, formData);
                 setCashflows((prev) =>
                     prev.map((item) => (item.id === editingId ? { ...item, ...formData } : item))
                 );
                 alert("Entry updated successfully!");
             } else {
                 // Create new entry
-                const response = await axios.post(API_URL, formData);
+                const response = await axios.post(cashflowURL, formData);
                 setCashflows([...cashflows, response.data]);
                 alert("Entry added successfully!");
             }
 
-            // Reset form
             resetForm();
         } catch (error) {
             console.error("Error submitting data:", error);
@@ -65,11 +66,10 @@ function Cashflow() {
         }
     };
 
-    // Handle delete action
     const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to delete this entry?")) {
             try {
-                await axios.delete(`${API_URL}${id}/`);
+                await axios.delete(`${cashflowURL}${id}/`);
                 setCashflows(cashflows.filter((item) => item.id !== id));
                 alert("Entry deleted successfully!");
             } catch (error) {
@@ -79,7 +79,6 @@ function Cashflow() {
         }
     };
 
-    // Handle edit action
     const handleEdit = (item) => {
         setDate(item.date);
         setIncomeAmount(item.income_amount);
@@ -88,7 +87,6 @@ function Cashflow() {
         setShowForm(true);
     };
 
-    // Reset form state
     const resetForm = () => {
         setDate("");
         setIncomeAmount("");
@@ -97,17 +95,11 @@ function Cashflow() {
         setShowForm(false);
     };
 
-    // Calculate total cashflow balance
-    // const totalIncome = cashflows.reduce((sum, item) => sum + item.income_amount, 0);
-    // const totalOutgoing = cashflows.reduce((sum, item) => sum + item.outgoing_amount, 0);
-    // const netBalance = totalIncome - totalOutgoing;
-
     document.title = "Cashflow | SPK Finance";
 
     return (
         <div className="page-content">
             <Container fluid>
-                {/* Top Bar with Button */}
                 <Row className="justify-content-between align-items-center mt-3">
                     <Col>
                         <h3>Cashflow Management</h3>
@@ -120,10 +112,8 @@ function Cashflow() {
                     </Col>
                 </Row>
 
-                {/* Error Message */}
                 {error && <Alert color="danger">{error}</Alert>}
 
-                {/* Form Section */}
                 {showForm && (
                     <Row className="justify-content-center mt-3">
                         <Col md={6}>
@@ -135,17 +125,39 @@ function Cashflow() {
                                     <Form onSubmit={handleSubmit}>
                                         <FormGroup>
                                             <Label for="date">Date</Label>
-                                            <Input type="date" id="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                                            <Input
+                                                type="date"
+                                                id="date"
+                                                value={date}
+                                                onChange={(e) => setDate(e.target.value)}
+                                                required
+                                            />
                                         </FormGroup>
 
                                         <FormGroup>
                                             <Label for="incomeAmount">Income Amount</Label>
-                                            <Input type="number" id="incomeAmount" placeholder="Enter Income Amount" value={incomeAmount} onChange={(e) => setIncomeAmount(e.target.value)} min={0} required />
+                                            <Input
+                                                type="number"
+                                                id="incomeAmount"
+                                                placeholder="Enter Income Amount"
+                                                value={incomeAmount}
+                                                onChange={(e) => setIncomeAmount(e.target.value)}
+                                                min={0}
+                                                required
+                                            />
                                         </FormGroup>
 
                                         <FormGroup>
                                             <Label for="outgoingAmount">Outgoing Amount</Label>
-                                            <Input type="number" id="outgoingAmount" placeholder="Enter Outgoing Amount" value={outgoingAmount} onChange={(e) => setOutgoingAmount(e.target.value)} min={0} required />
+                                            <Input
+                                                type="number"
+                                                id="outgoingAmount"
+                                                placeholder="Enter Outgoing Amount"
+                                                value={outgoingAmount}
+                                                onChange={(e) => setOutgoingAmount(e.target.value)}
+                                                min={0}
+                                                required
+                                            />
                                         </FormGroup>
 
                                         <div className="text-end">
@@ -165,10 +177,8 @@ function Cashflow() {
                     </Row>
                 )}
 
-                {/* Loading Spinner */}
                 {loading && <Spinner color="primary" className="mt-3" />}
 
-                {/* Cashflow Records */}
                 <Row className="justify-content-center mt-5">
                     <Col md={8}>
                         <Card>
@@ -203,9 +213,6 @@ function Cashflow() {
                                         ))}
                                     </tbody>
                                 </Table>
-
-                                {/* Total Balance */}
-                                {/* <h5 className="mt-3">Total Balance: ₹{netBalance.toFixed(2)}</h5> */}
                             </CardBody>
                         </Card>
                     </Col>

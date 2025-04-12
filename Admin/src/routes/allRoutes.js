@@ -9,7 +9,8 @@ import LoanPayment from "../pages/LoanPayment/Payment";
 import Cashflow from "../pages/Cashflow/Cashflow";
 // Calendar
 import Calendar from "../pages/Calendar/index";
-
+//UserForm
+import UserForm from "../pages/UserForm/UserForm";
 //Chat
 import Chat from "../pages/Chat/Chat";
 import Status from "../pages/Chat/status";
@@ -21,8 +22,8 @@ import EmiCalculater from "../pages/Calculator/EmiCalculater";
 import ContactsGrid from "../pages/Contacts/contacts-grid";
 import ContactsList from "../pages/Contacts/ContactList/contacts-list";
 import ContactsProfile from "../pages/Contacts/ContactsProfile/contacts-profile";
-
-
+//LoanRequest
+import LoanRequest from "../pages/LoanRequest/LoanRequest";
 
 //Utility
 import PagesStarter from "../pages/Utility/StarterPage";
@@ -187,7 +188,10 @@ const userRoutes = [
   // { path: "/form-wizard", component: <FormWizard /> },
   { path: "/form-mask", component: <FormMask /> },
 
-
+// LoanRequest
+{ path: "/LoanRequest", component: <LoanRequest /> },
+//UserForm
+{ path: "/UserForm", component: <UserForm /> },
 
   //Charts
   { path: "/charts-apex", component: <Apexchart /> },

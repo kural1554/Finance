@@ -153,7 +153,7 @@ const DocumentUpload = ({ onDocumentsChange }) => {
   aria-describedby="documentTypeError"
 >
   <option value="">Select Document</option>
-  {["pan", "aadhar", "voterId", "drivingLicense"].map((docType) => (
+  {["pan", "aadhar", "voterId", "Driving License"].map((docType) => (
     <option key={docType} value={docType} disabled={documents.some((doc) => doc.type === docType)}>
       {docType === "pan"
         ? "PAN Card"

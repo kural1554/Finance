@@ -1,10 +1,7 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import AllDetailsViewSet
-
-router = DefaultRouter()
-router.register(r'all-details', AllDetailsViewSet, basename='all-details')
+from django.urls import path
+from .views import LoanApplicationCreateView, ApplicantDetailView
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('applications/', LoanApplicationCreateView.as_view(), name='loan-application'),
+    path('applications/<str:userID>/', ApplicantDetailView.as_view(), name='applicant-detail'),
 ]

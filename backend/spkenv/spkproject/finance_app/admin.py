@@ -1,6 +1,6 @@
+# finance_app/admin.py
 from django.contrib import admin
-from .models import Loan, Employment, BankDetails  # Make sure models exist
+from .models import Applicant  # Only import existing models
 
-admin.site.register(Loan)
-admin.site.register(Employment)
-admin.site.register(BankDetails)
+# Register your models here
+admin.site.register(Applicant)

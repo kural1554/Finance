@@ -25,8 +25,8 @@ media
 
 # Distribution / packaging
 .Python
-spk_backend/build/
-/build
+
+
 develop-eggs/
 dist/
 downloads/

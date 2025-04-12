@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
+from rest_framework.permissions import AllowAny
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,11 +42,16 @@ INSTALLED_APPS = [
     'loans',
     'applicants',
     'banking',
+    'corsheaders',
     'cashflow',
+    'loanrequest',
     'nominees',
     'rest_framework',
-    'corsheaders',
-    'finance_app'
+    'finance_app',
+    'property_management',
+    'comment',
+    'loanapp',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
@@ -57,6 +63,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = 'spkproject.urls'
@@ -64,13 +71,14 @@ ROOT_URLCONF = 'spkproject.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS':[os.path.join(BASE_DIR, 'build')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
+                
                 'django.contrib.messages.context_processors.messages',
             ],
         },
@@ -124,12 +132,16 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
+permission_classes = [AllowAny]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-
+STATICFILES_DIRS = [
+   os.path.join(BASE_DIR, 'build/static')  # React build's static folder (CSS, JS, etc.)
+]
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles' 
+
 #STATICFILES_DIRS = [os.path.join(BASE_DIR,'spkproject','static')]
 
 # ✅ Media files (Uploaded Images)
@@ -137,7 +149,8 @@ MEDIA_URL = '/media/'  # URL to access media files
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media', 'uploads')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Adjust for your frontend URL
-]
-CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",  # Adjust for your frontend URL
+# ]
+# CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
+CORS_ALLOW_ALL_ORIGINS = True 

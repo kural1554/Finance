@@ -160,9 +160,7 @@ const SidebarContent = props => {
             </li>
             <li>
             <Link to="/loanpayment" className="">
-                <FeatherIcon
-                  icon="credit-card"
-                />{" "}
+            <i className="bx bx-money"></i>{" "}
                 <span>{props.t("Loan Payment")}</span>
               </Link>
               </li>
@@ -173,6 +171,13 @@ const SidebarContent = props => {
                   icon="dollar-sign"
                 />{" "}
                 <span>{props.t("Cashflow")}</span>
+              </Link>
+            </li>
+            {/* Loan Request */}
+            <li>
+              <Link to="/LoanRequest" className="">
+              <i className="bx bx-credit-card"></i>{" "}
+                <span>{props.t("Loan Request")}</span>
               </Link>
             </li>
             {/* loan management */}
@@ -208,6 +213,7 @@ const SidebarContent = props => {
                 <span>{props.t("Approval Status")}</span>
               </Link>
             </li>
+            
               
               {/*  <ul className="sub-menu">
                 <li>

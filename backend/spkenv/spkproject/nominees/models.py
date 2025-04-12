@@ -32,7 +32,7 @@ class Nominee(models.Model):
     nominee_relationship = models.IntegerField(choices=RELATIONSHIP_CHOICES)
     nominee_id_proof_type = models.IntegerField(choices=ID_PROOF_CHOICES)
     nominee_id_proof_number = models.CharField(max_length=50)
-    nominee_id_proof_file = models.FileField(upload_to="uploads/files/nomineeproof")
+    nominee_id_proof_file = models.FileField(upload_to="uploads/files/nomineeproof",null=True, blank=True)
     nominee_photo = models.ImageField(upload_to="uploads/images/nominee/", null=True, blank=True)
 
     def __str__(self):

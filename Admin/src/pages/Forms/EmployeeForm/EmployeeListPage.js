@@ -11,7 +11,9 @@ import "jspdf-autotable";
 import FeatherIcon from "feather-icons-react";
 
 // Global Filter Component
+
 function GlobalFilter({ preGlobalFilteredRows, globalFilter, setGlobalFilter }) {
+    
     const count = preGlobalFilteredRows.length;
     const [value, setValue] = React.useState(globalFilter);
     const onChange = useAsyncDebounce((value) => {
@@ -165,19 +167,23 @@ function Table({ columns, data, exportPDF }) {
 
 // Main Component
 function EmployeeListPage() {
+    const API_URL = `${process.env.REACT_APP_API_BASE_URL}/employees/`;
     const navigate = useNavigate();
     const [tableData, setTableData] = useState([]);
 
     useEffect(() => {
-        axios.get("http://127.0.0.1:8080/api/employees/") // Replace with your API endpoint
-            .then((response) => {
-                console.log("Employee Data:", response.data);
-                setTableData(response.data);
-            })
-            .catch((error) => {
-                console.error("Error fetching employee data:", error);
-            });
-    }, []);
+        const fetchEmployeeData = async () => {
+          try {
+            const response = await axios.get(API_URL);
+            console.log("Employee Data:", response.data);
+            setTableData(response.data);
+          } catch (error) {
+            console.error("Error fetching employee data:", error);
+          }
+        };
+    
+        fetchEmployeeData();
+      }, [API_URL]);
     const genderChoices = {
         1: "Male",
         2: "Female",
@@ -258,16 +264,18 @@ function EmployeeListPage() {
     };
     const handleDelete = async (employeeID) => {
         if (window.confirm("Are you sure you want to delete this employee?")) {
-            try {
-                await axios.delete(`http://127.0.0.1:8000/api/employees/${employeeID}/`);
-                setTableData(prevData => prevData.filter(emp => emp.employeeID !== employeeID));
-                alert("Employee deleted successfully!");
-            } catch (error) {
-                console.error("Error deleting employee:", error);
-                alert("Failed to delete employee.");
-            }
+          try {
+            await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/employees/${employeeID}/`);
+      
+            // Assuming employeeID is the correct unique key from the backend
+            setTableData((prevData) => prevData.filter((emp) => emp.id !== employeeID)); // or emp.employeeID
+            alert("✅ Employee deleted successfully!");
+          } catch (error) {
+            console.error("❌ Error deleting employee:", error);
+            alert("Failed to delete employee.");
+          }
         }
-    };
+      };
     const columns = useMemo(
         () => [
             { Header: "ID", accessor: "id" },

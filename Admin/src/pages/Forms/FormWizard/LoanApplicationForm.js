@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import axios from "axios";
 import {
   Card,
   CardHeader,
@@ -8,12 +9,8 @@ import {
   NavItem,
   NavLink,
   Button,
-  Modal,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Row,
-  Table,
+  Table, // Make sure Table is imported if used elsewhere, though not in final submit logic
   Col,
   Form,
   FormGroup,
@@ -21,359 +18,318 @@ import {
   Input,
   UncontrolledTooltip,
 } from "reactstrap";
-import Flatpickr from "react-flatpickr"
 import Dropzone from "react-dropzone";
+import { useDropzone } from "react-dropzone"; // Import useDropzone
+import Flatpickr from "react-flatpickr";
+// import Dropzone from "react-dropzone"; // Dropzone is now inside DocumentUpload
 import { useReactToPrint } from "react-to-print";
 import classnames from "classnames";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { Link } from "react-router-dom";
-import PDFPreview from "./PDFdocument";
-import { initialFormData } from "../constants/formConfig";
-import validateForm from "../utils/validation";
-import LoanCalculator from "../utils/LoanCalculator";
-import DocumentUpload from "./IdProofSection";
+import PDFPreview from "./PDFdocument"; // Assuming this exists
+import { initialFormData } from "../constants/formConfig"; // Assuming this exists
+import validateForm from "../utils/validation"; // Assuming this exists
+import DocumentUpload from "./IdProofSection"; // Import the separate component
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+// NOTE: Removed unused imports like Table, Dropzone (if only used in DocumentUpload)
+
 const LoanApplicationForm = () => {
   const [activeTab, setActiveTab] = useState(1);
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
-  const [idProofFile, setidProofFile] = useState({});
-  const [profilephoto, 
-    setprofilephoto] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const toggleModal = () => setModalOpen(!modalOpen);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [nominees, setNominees] = useState([]); // Store list of nominees// State to hold the uploaded documents data from DocumentUpload
-  const [newNominee, setNewNominee] = useState(initialFormData.nominees);
-  // Handle nominee field changes
-  const handleNomineesChange = (field, value) => {
-    setNewNominee((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-  // Add new nominee to the list
-  const addNominee = () => {
-    const errors = {};
-  
-    // Validation: Nominee Name
-    if (!newNominee.nomineeName) {
-      errors.nomineeName = "Nominee Name is required.";
-    }
-  
-    // Validation: Nominee Phone (Must be 10-digit number)
-    if (!newNominee.nomineePhone) {
-      errors.nomineePhone = "Nominee Phone is required.";
-    } else if (!/^\d{10}$/.test(newNominee.nomineePhone)) {
-      errors.nomineePhone = "Nominee Phone must be a valid 10-digit number.";
-    }
-  
-    // Validation: Nominee Email (Must be valid format)
-    if (!newNominee.nomineeEmail) {
-      errors.nomineeEmail = "Nominee Email is required.";
-    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(newNominee.nomineeEmail)) {
-      errors.nomineeEmail = "Invalid Email format.";
-    }
-  
-    // Validation: Relationship
-    if (!newNominee.nomineeRelationship) {
-      errors.nomineeRelationship = "Nominee Relationship is required.";
-    }
-  
-    // If "Other" is selected, ensure the user specifies the relationship
-    if (newNominee.nomineeRelationship === "5" && !newNominee.nomineeOtherRelationship) {
-      errors.nomineeOtherRelationship = "Please specify the Relationship.";
-    }
-  
-    // Validation: Address
-    if (!newNominee.nomineeAddress) {
-      errors.nomineeAddress = "Nominee Address is required.";
-    }
-  
-    // Validation: ID Proof Type & Number
-    if (!newNominee.nomineeidProofType) {
-      errors.nomineeidProofType = "Nominee ID Proof Type is required.";
-    }
-    if (!newNominee.nomineeidProofNumber) {
-      errors.nomineeidProofNumber = "Nominee ID Proof Number is required.";
-    }
-  
-    // Validation: Profile Photo Upload
-    if (!newNominee.nomineeProfilePhoto) {
-      errors.nomineeProfilePhoto = "Nominee Profile Photo is required.";
-    }
-  
-    // Validation: ID Proof File Upload
-    if (!newNominee.nomineeidProofFile) {
-      errors.nomineeidProofFile = "Nominee ID Proof File is required.";
-    }
-  
-    // **If errors exist, show them and prevent form submission**
-    if (Object.keys(errors).length > 0) {
-      alert(Object.values(errors).join("\n")); // Show all errors in a single alert
-      return;
-    }
-  
-    // **If validation passes, update the nominees list**
-    setNominees((prevNominees) => {
-      const updatedNominees = [...prevNominees, { ...newNominee }];
-  
-      // Sync nominees with formData
-      setFormData((prevData) => ({
-        ...prevData,
-        nominees: updatedNominees,
-      }));
-  
-      return updatedNominees;
-    });
-  
-    // **Reset newNominee fields after adding**
-    setNewNominee({
-      nomineeName: "",
-      nomineePhone: "",
-      nomineeEmail: "",
-      nomineeRelationship: "",
-      nomineeOtherRelationship: "",
-      nomineeidProofType: "",
-      nomineeAddress: "",
-      nomineeProfilePhoto: null,
-      nomineeidProofNumber: "",
-      nomineeidProofFile: null,
-    });
-  };
-  
-  // Handle nominee file uploads
-  const handleNomineeFileUpload = (acceptedFiles) => {
-    if (acceptedFiles.length > 0) {
-      const file = acceptedFiles[0];
-      setNewNominee((prev) => ({
-        ...prev,
-        nomineeidProofFile: {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          preview: URL.createObjectURL(file),
-          formattedSize: formatFileSize(file.size),
-        },
-      }));
-    }
-  };
-  const handleNomineeProfileUpload = (acceptedFiles) => {
-    if (acceptedFiles && acceptedFiles.length > 0) {
-      const file = acceptedFiles[0];
-      setNewNominee((prev) => ({
-        ...prev,
-        nomineeProfilePhoto: {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          preview: URL.createObjectURL(file), // Preview for images
-          formattedSize: `${(file.size / 1024).toFixed(2)} KB`, // Format file size
-        },
-      }));
-    }
-  };
-  const removeNomineeProfilePhoto = () => {
-    setNewNominee((prev) => ({
-      ...prev,
-      nomineeProfilePhoto: null,
-    }));
-  };
-  
-  // Helper function to format file size
-  const formatFileSize = (size) => {
-    if (size < 1024) return `${size} bytes`;
-    else if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
-    else return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-  };
-  // Remove nominee file
-  const removeNomineeFile = () => {
-    setNewNominee((prev) => ({
-      ...prev,
-      nomineeidProofFile: null,
-    }));
-  };
-  // Remove a nominee
-  const removeNominee = (index) => {
-    setNominees((prevNominees) => {
-      const updatedNominees = prevNominees.filter((_, i) => i !== index);
 
-      // Sync nominees with formData
-      setFormData((prevData) => ({
-        ...prevData,
-        nominees: updatedNominees,
-      }));
+  // Use a more descriptive name for the state holding document info from child
+  const [applicantDocuments, setApplicantDocuments] = useState([]);
+  const printRef = useRef();
+  const documentUploadRef = useRef(); // Ref for DocumentUpload if needed
+  const [newApplicant, setNewApplicant] = useState({
+    applicantProfilePhoto: null,
+  });
+  // --- Profile Photo State ---
+  const [profilePhotoFile, setProfilePhotoFile] = useState(null); // Store the File object
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null); // Store the preview URL
+ //-- data fectch in loan requist 
+  useEffect(() => {
+    // Revoke the data uris to avoid memory leaks
+    return () => {
+      if (profilePhotoPreview) {
+        URL.revokeObjectURL(profilePhotoPreview);
+      }
+    };
+  }, [profilePhotoPreview]);
 
-      return updatedNominees;
+  // --- Dropzone Configuration for Profile Photo ---
+  const onDropProfilePhoto = useCallback(
+    (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        const file = acceptedFiles[0];
+        // Revoke previous preview URL if it exists
+        if (profilePhotoPreview) {
+          URL.revokeObjectURL(profilePhotoPreview);
+        }
+        // Set the new file and create a preview URL
+        setProfilePhotoFile(file);
+        setProfilePhotoPreview(URL.createObjectURL(file));
+        console.log("Profile photo selected:", file);
+        // Clear potential validation error for profile photo
+        if (errors.profile_photo) {
+          setErrors((prevErrors) => ({ ...prevErrors, profile_photo: null }));
+        }
+      } else {
+        // Handle rejected files (e.g., wrong type, size)
+        toast.error("Invalid file type or size. Please upload a valid image (JPG, PNG, GIF) under 2MB."); // Example error
+      }
+    },
+    [profilePhotoPreview, errors.profile_photo] // Include errors in dependency if clearing it
+  );
+
+  const { getRootProps: getRootProfilePhotoProps, getInputProps: getInputProfilePhotoProps } =
+    useDropzone({
+      onDrop: onDropProfilePhoto,
+      accept: {
+        "image/jpeg": [],
+        "image/png": [],
+        "image/gif": [],
+        "image/jpg": [],
+      },
+      maxSize: 2 * 1024 * 1024, // Example: 2MB limit
+      multiple: false, // Only allow one profile photo
+      onDropRejected: () => {
+        toast.error("File rejected. Check type (JPG, PNG, GIF) and size (max 2MB).");
+      }
     });
+
+  // Function to remove the selected profile photo
+  const removeProfilePhoto = (e) => {
+    e.stopPropagation(); // Prevent dropzone click event if button is inside
+    if (profilePhotoPreview) {
+      URL.revokeObjectURL(profilePhotoPreview);
+    }
+    setProfilePhotoFile(null);
+    setProfilePhotoPreview(null);
+    console.log("Profile photo removed");
   };
-  const editnominee = (index) => {
-    const docToEdit = nominees[index];
-    setNewNominee(docToEdit);
-    removeNominee(index);
-  };
-  // Ensure file URLs are cleaned up when component unmounts
-  useEffect(() => {
-    return () => {
-      nominees.forEach(
-        (nominee) =>
-          nominee.nomineeidProofFile?.preview &&
-          URL.revokeObjectURL(nominee.nomineeidProofFile.preview)
-      );
-    };
-  }, [nominees]);
-  useEffect(() => {
-    return () => {
-      profilephoto.forEach(
-        (file) => file.preview && URL.revokeObjectURL(file.preview)
-      );
-      Object.values(idProofFile).forEach(
-        (file) => file.preview && URL.revokeObjectURL(file.preview)
-      );
-      nominees.forEach(
-        (nominee) =>
-          nominee.nomineeidProofFile?.preview &&
-          URL.revokeObjectURL(nominee.nomineeidProofFile.preview)
-      );
-    };
-  }, [profilephoto, idProofFile, nominees]);
+
   // Callback to receive document data from DocumentUpload component
   const handleDocumentsChange = useCallback((docs) => {
-    setidProofFile(docs);
-    setFormData((prevData) => ({
-      ...prevData,
-      idProofFile: docs,
-    }));
+    console.log("Received documents from child:", docs);
+    setApplicantDocuments(docs);
+    // No longer need to store files directly in formData for submission
+    // We'll get them from applicantDocuments state during submit
   }, []);
-  // Example useEffect to also sync profilephoto if needed:
-  useEffect(() => {
-    setFormData((prev) => ({
-      ...prev,
-      passportPhoto: profilephoto[0]?.preview || null,
-      idProofFile,
-    }));
-  }, [profilephoto, idProofFile]);
-  const printRef = useRef();
-  const [loanDetails, setLoanDetails] = useState(null);
-
-  const handleLoadSchedule = () => {
-    if (!formData.loanAmount || !formData.loanTerm || !formData.interestRate) {
-      alert("Please enter valid loan details.");
-      return;
-    }
-
-    // setLoanDetails({
-    //   initialLoanAmount: formData.loanAmount,
-    //   initialLoanTerm: formData.loanTerm,
-    //   initialTermType: formData.loanTermType,
-    //   initialInterestRate: formData.interestRate,
-    // });
-
-    setScheduleModalOpen(true);
-  };
 
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
   });
-  const handleProfilePhoto = (files) => {
-    files.map((file) =>
-      Object.assign(file, {
-        preview: URL.createObjectURL(file),
-        formattedSize: formatBytes(file.size),
-      })
-    );
-    setprofilephoto(files);
-  };
 
-  const formatBytes = (bytes, decimals = 2) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
-  };
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-  
+
     let processedValue;
-  
+
     if (type === "checkbox") {
-      //  Keep checkboxes as booleans
       processedValue = checked;
     } else if (type === "number") {
-      //  Convert numbers properly
+      // Store numbers as numbers, handle empty string case
       processedValue = value === "" ? null : Number(value);
-    } else if (type === "select") {
-      //  Convert select values if they are numeric
-      processedValue = /^\d+$/.test(value) ? Number(value) : value;
-    } else {
-      //  Keep everything else as strings
+      // Handle potential NaN if user types non-numeric chars in number input
+      if (isNaN(processedValue)) {
+        processedValue = null; // Or keep the invalid string temporarily, validation should catch it
+      }
+    } else if (e.target.tagName === "SELECT") { // Check tag name for select
+      // Handle numeric strings from select options
+      processedValue = /^\d+$/.test(value) && value !== "" ? Number(value) : value;
+    }
+    else {
       processedValue = value;
     }
-  
-    console.log(`Input Change - Name: ${name}, Value: ${processedValue}, Type: ${typeof processedValue}`);
-  
+
+    console.log(
+      `Input Change - Name: ${name}, Value: ${processedValue}, Type: ${typeof processedValue}`
+    );
+
     setFormData((prevData) => ({
       ...prevData,
       [name]: processedValue,
     }));
+
+    // Clear validation error for this field on change
+    if (errors[name]) {
+      setErrors(prevErrors => ({ ...prevErrors, [name]: null }));
+    }
   };
-  
 
-  // const handleInputChange = (e) => {
-  //   const { name, value, type, checked } = e.target;
-  //   console.log(`Input Change - Name: ${name}, Value: ${value},Type: ${typeof value}`);
-  //   setFormData((prevData) => ({
-  //     ...prevData,
-  //     [name]: type === "checkbox" ? checked : value,
+  // --- Remove transformFormData function - We build FormData directly ---
 
-  //   }));
-  // };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-  
-    const isValid = validateForm(activeTab, formData, setErrors, idProofFile);
-    if (!isValid) {
-      // Log the final JSON format before sending
-      const finalPayload = JSON.stringify(formData, null, 2);
-      console.log("Final JSON Payload:", finalPayload);
-  
-      try {
-        const response = await fetch("http://127.0.0.1:8080/api/applicants/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: finalPayload,
-        });
-  
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+    console.log("Form data state on submit:", formData);
+    console.log("Applicant documents state on submit:", applicantDocuments);
+
+    // Optional: Add validation check for the entire form before creating FormData
+    // const formIsValid = validateForm(null, formData, setErrors); // Assuming validateForm checks all
+    // if (!formIsValid) {
+    //    toast.error("Please fix the errors in the form.");
+    //    return;
+    // }
+
+    // --- Create FormData ---
+    const submissionData = new FormData();
+    if (profilePhotoFile) {
+      submissionData.append('profile_photo', profilePhotoFile);
+    }
+    // --- Append Simple Fields ---
+    // Helper to safely append, handling null/undefined
+    const safeAppend = (key, value) => {
+      if (value !== null && value !== undefined) {
+        submissionData.append(key, value);
+      } else {
+        submissionData.append(key, ''); // Send empty string for null/undefined
+      }
+    };
+
+    safeAppend('userID', formData.userID);
+    safeAppend('title', formData.title);
+    safeAppend('first_name', formData.first_name);
+    safeAppend('last_name', formData.last_name);
+    safeAppend('dateOfBirth', formData.dateOfBirth); // Should be 'YYYY-MM-DD' string
+    safeAppend('gender', formData.gender);
+    safeAppend('maritalStatus', formData.maritalStatus);
+    safeAppend('email', formData.email);
+    safeAppend('phone', formData.phone);
+    safeAppend('address', formData.address);
+    safeAppend('city', formData.city);
+    safeAppend('state', formData.state);
+    safeAppend('postalCode', formData.postalCode);
+    
+
+    // --- Append Nested Fields (using dot notation - common for DRF, check your backend!) ---
+    // Assuming only one entry for employment, banking, properties based on your form structure
+
+    // Employment (index 0)
+    safeAppend('employment[0]employmentType', formData.employmentType);
+    safeAppend('employment[0]jobTitle', formData.jobTitle);
+    safeAppend('employment[0]yearsWithEmployer', formData.yearsWithEmployer);
+    safeAppend('employment[0]monthlyIncome', formData.monthlyIncome);
+    safeAppend('employment[0]otherIncome', formData.otherIncome); // Handle optional field
+
+    // Banking Details (index 0)
+    safeAppend('banking_details[0]accountHolderName', formData.accountHolderName);
+    safeAppend('banking_details[0]accountNumber', formData.accountNumber);
+    safeAppend('banking_details[0]bankName', formData.bankName);
+    safeAppend('banking_details[0]ifscCode', formData.ifscCode);
+    safeAppend('banking_details[0]bankBranch', formData.bankBranch);
+    safeAppend('banking_details[0]accountType', formData.accountType);
+
+    // Properties (index 0)
+    safeAppend('properties[0]propertyType', formData.propertyType);
+    safeAppend('properties[0]property_address', formData.property_address);
+    safeAppend('properties[0]propertyValue', formData.propertyValue);
+    safeAppend('properties[0]propertyAge', formData.propertyAge);
+    safeAppend('properties[0]propertyOwnership', formData.propertyOwnership);
+
+    // --- Append ApplicantProof Documents ---
+    // Check if the backend expects files under a single key or indexed keys
+    // Option 1: Multiple files under the same key (common)
+    // applicantDocuments.forEach((doc) => {
+    //     if (doc.file) {
+    //         submissionData.append('ApplicantProofFiles', doc.file, doc.file.name); // Key name might need adjustment
+    //         // How to send associated metadata (type, idNumber)?
+    //         // Requires backend coordination. Maybe send as separate fields?
+    //         // submissionData.append('ApplicantProofTypes', doc.type); // Example - less common
+    //         // submissionData.append('ApplicantProofNumbers', doc.idNumber); // Example - less common
+    //     }
+    // });
+
+    // Option 2: Indexed structure matching other nested fields (if backend supports it)
+    applicantDocuments.forEach((doc, index) => {
+      if (doc.file) {
+        // Append metadata for this document
+        safeAppend(`ApplicantProof[${index}]type`, doc.type);
+        safeAppend(`ApplicantProof[${index}]idNumber`, doc.idNumber);
+        // Append the actual file
+        submissionData.append(`ApplicantProof[${index}]file`, doc.file, doc.file.name);
+      }
+    });
+
+    // --- Log FormData Contents (for debugging) ---
+    console.log("--- FormData to be sent ---");
+    for (let pair of submissionData.entries()) {
+      console.log(pair[0] + ': ', pair[1]);
+    }
+    console.log("---------------------------");
+
+
+    try {
+      // --- Send FormData using Axios ---
+      const response = await axios.post(
+        "http://127.0.0.1:8080/api/applicants/applicants/",
+        submissionData, // Pass the FormData object directly
+        {
+          // **IMPORTANT: Do NOT manually set Content-Type header**
+          // Axios will automatically set it to multipart/form-data with the correct boundary
+          // headers: {
+          //   "Content-Type": "multipart/form-data", // REMOVE THIS LINE
+          // },
         }
-  
-        const result = await response.json();
-        console.log("Success:", result);
-  
-        setActiveTab((prevTab) => Math.min(prevTab + 1, 9));
-      } catch (error) {
-        console.error("Error posting form:", error);
+      );
+
+      console.log("Success:", response.data);
+      toast.success("Application submitted successfully!");
+      setActiveTab(6); // Navigate to success tab
+
+    } catch (error) {
+      console.error("Error posting form:", error);
+      if (error.response) {
+        console.error("Error Response Data:", error.response.data);
+        console.error("Error Response Status:", error.response.status);
+        // Try to extract a meaningful error message from the backend response
+        let errorMsg = "Submission failed.";
+        if (typeof error.response.data === 'object' && error.response.data !== null) {
+          // Look for common error patterns
+          const errors = error.response.data;
+          if (errors.detail) {
+            errorMsg = errors.detail;
+          } else if (Array.isArray(errors.non_field_errors)) {
+            errorMsg = errors.non_field_errors.join(' ');
+          } else {
+            // Generic fallback for object errors
+            errorMsg = Object.entries(errors)
+              .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+              .join('; ');
+          }
+          errorMsg = `Submission failed: ${errorMsg}`
+        } else {
+          // If data is not an object or is null/undefined
+          errorMsg = `Submission failed: Server responded with status ${error.response.status}.`;
+        }
+        toast.error(errorMsg);
+
+      } else if (error.request) {
+        console.error("Error Request:", error.request);
+        toast.error(
+          "Submission failed: No response from server. Please check network."
+        );
+      } else {
+        console.error("Error Message:", error.message);
+        toast.error(`Submission failed: ${error.message}`);
       }
     }
   };
-  
+
   const toggleTab = (tab) => {
-    if (activeTab !== tab && tab >= 1 && tab <= 8) {
+    if (activeTab !== tab && tab >= 1 && tab <= 7) {
       if (tab > activeTab) {
-        
+
         try {
           const isValid = validateForm(
             activeTab,
             formData,
             setErrors,
-            idProofFile
           );
           toast.error(`Please fix the errors before proceeding.${setErrors}`);
           // if (!isValid) return;//check form validity
@@ -397,14 +353,14 @@ const LoanApplicationForm = () => {
       }, 100);
     }
   };
-  
-  
-  const renderFormGroup = (label, name, type, options = [], value, onChange,disabled = false) => {
+
+
+  const renderFormGroup = (label, name, type, options = [], value, onChange, disabled = false) => {
     // Convert select values to numbers if they are numeric
     const processedValue = type === "select" && value !== "" && !isNaN(value) ? Number(value) : value;
-  
+
     // console.log(`Processed Value Type (${name}):`, typeof processedValue, processedValue); // Debugging
-  
+
     return (
       <FormGroup>
         <Label for={name}>{label}</Label>
@@ -433,7 +389,7 @@ const LoanApplicationForm = () => {
           <Flatpickr
             style={{ borderColor: errors[name] ? "red" : "black" }}
             placeholder="DD M,YYYY"
-            value={value} 
+            value={value}
             options={{
               altInput: true,
               altFormat: "F j, Y",
@@ -464,9 +420,9 @@ const LoanApplicationForm = () => {
       </FormGroup>
     );
   };
-  
-  
-  
+
+
+
 
   return (
     <React.Fragment>
@@ -496,13 +452,9 @@ const LoanApplicationForm = () => {
             >
               {[
                 { tooltip: "Personal Details", icon: "bx-user" },
-                // { tooltip: "Loan Details", icon: "bx bx-rupee" },
                 { tooltip: "Employment Details", icon: "bx-briefcase" },
                 { tooltip: "Bank Details", icon: "mdi mdi-bank" },
                 { tooltip: "Property Details", icon: "bx-home" },
-                { tooltip: "References", icon: "bx-group" },
-                // { tooltip: "Agreement", icon: "bx-check-shield" },
-                // { tooltip: "Final Review", icon: "bx-check-circle" },
               ].map(({ tooltip, icon }, index) => (
                 <NavItem
                   key={index}
@@ -510,7 +462,7 @@ const LoanApplicationForm = () => {
                   style={{ flex: "0 0 33.33%", minWidth: "120px" }}
                 >
                   <NavLink
-                   
+
                     className={classnames({ active: activeTab === index + 1 })}
                     onClick={() => toggleTab(index + 1)}
                   >
@@ -537,13 +489,9 @@ const LoanApplicationForm = () => {
                   {activeTab &&
                     [
                       "Personal Details",
-                      // "Loan Details",
                       "Employment Details",
                       "Bank Details",
                       "Property Details",
-                      "References",
-                      // "Agreement",
-                      // "Final Review",
                     ][activeTab - 1]}
                 </h5>
                 <p className="card-title-desc">
@@ -557,6 +505,86 @@ const LoanApplicationForm = () => {
               <TabPane tabId={1}>
                 <Form>
                   <Row>
+                    <Col className="col-12">
+                      <CardBody className="position-relative">
+                        <div
+                          className="position-absolute"
+                          style={{
+                            top: "40px",
+                            right: "82px",
+                            zIndex: "100",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "10px",
+                          }}
+                        >
+                          {profilePhotoPreview && (
+                            <div className="d-flex flex-column align-items-center">
+                              <img
+                                src={profilePhotoPreview}
+                                alt="Applicant Profile"
+                                width="80"
+                                height="80"
+                                
+                                className="rounded-circle border"
+                                style={{ 
+                                  width: "80px",
+                                  height: "80px",
+                                  objectFit: "cover",
+                                  marginRight:"36px",
+                                  borderRadius: "50%",
+                                  border: "1px solid #ddd"
+                                }}
+                              />
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={removeProfilePhoto}
+                              >
+                                <i className="bx bx-trash"></i> Remove Photo
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <Form className="d-flex justify-content-end">
+                          <div className="col-md-4 col-lg-3">
+                            <div
+                              {...getRootProfilePhotoProps()}
+                              className="dropzone"
+                              style={{ minHeight: "100px" }}
+                            >
+                              <input {...getInputProfilePhotoProps()} />
+                              <div className="dz-message p-3 border rounded text-center" style={{ cursor: "pointer" }}>
+                                <div className="d-flex flex-column align-items-center">
+                                  <div
+                                    className="rounded-circle d-flex align-items-center justify-content-center border"
+                                    style={{
+                                      width: "80px",
+                                      height: "80px",
+                                      backgroundColor: "#f8f9fa",
+                                    }}
+                                  >
+                                    <i className="bx bx-camera fs-3 text-muted" />
+                                  </div>
+                                  <h6 className="mb-0 mt-2">Upload Passport Photo</h6>
+                                  <small className="text-muted">Click or drag an image</small>
+                                </div>
+                              </div>
+                            </div>
+                            {errors.applicantProfilePhoto && (
+                              <div className="text-danger small mt-2">
+                                {errors.applicantProfilePhoto}
+                              </div>
+                            )}
+                          </div>
+                        </Form>
+                      </CardBody>
+                    </Col>
+                  </Row>
+                  {/* --- Profile Photo Upload Section --- */}
+
+                  <Row>
                     {/* Title, First Name, Last Name */}
                     <Col md={1} sm={2}>
                       {renderFormGroup("Title", "title", "select", [
@@ -568,18 +596,18 @@ const LoanApplicationForm = () => {
                       ])}
                     </Col>
                     <Col md={5} sm={10}>
-                      {renderFormGroup("First Name", "firstName","text")}
+                      {renderFormGroup("First Name", "first_name", "text")}
                     </Col>
                     <Col md={6} sm={12}>
-                      {renderFormGroup("Last Name", "lastName","text")}
+                      {renderFormGroup("Last Name", "last_name", "text")}
                     </Col>
                   </Row>
 
                   <Row>
                     {/* Date of Birth, Gender, Marital Status */}
                     <Col md={2} sm={12}>
-                    {renderFormGroup("Date of Birth", "dateOfBirth", "date", [], formData.dateOfBirth)}        {errors.dateOfBirth && <p className="text-danger">{errors.dateOfBirth}</p>}
-                     </Col>
+                      {renderFormGroup("Date of Birth", "dateOfBirth", "date", [], formData.dateOfBirth)}        {errors.dateOfBirth && <p className="text-danger">{errors.dateOfBirth}</p>}
+                    </Col>
                     <Col md={4} sm={12}>
                       {renderFormGroup("Gender", "gender", "select", [
                         { value: "", label: "Select Gender" },
@@ -609,7 +637,7 @@ const LoanApplicationForm = () => {
                       {renderFormGroup("Email", "email", "email")}
                     </Col>
                     <Col md={6} sm={12}>
-                      {renderFormGroup("Phone Number", "phone","tel")}
+                      {renderFormGroup("Phone Number", "phone", "tel")}
                     </Col>
                   </Row>
 
@@ -633,147 +661,20 @@ const LoanApplicationForm = () => {
                   </Row>
                   <Row className="mt-4">
                     <Col md={12}>
-                      {/* Integrate DocumentUpload Component */}
+
                       <h5>Upload ID Proof Documents</h5>
+                      <p className="text-muted">Upload clear images of your PAN Card, Aadhar Card, and Voter ID.</p>
+                      {/* Pass the ref and the callback */}
                       <DocumentUpload
-                        onDocumentsChange={handleDocumentsChange}
+                        ref={documentUploadRef} // Pass the ref
+                        onDocumentsChange={handleDocumentsChange} // Callback to update metadata/state
+                      // Pass initial data if needed for updates
                       />
-                       {errors.idProofFile && <p className="text-danger">{errors.idProofFile}</p>}
+
                     </Col>
                   </Row>
                 </Form>
               </TabPane>
-
-              {/* Tab 2: Loan Details */}
-              {/* <TabPane tabId={2}>
-                <Form>
-                  <Row>
-                    <Col md={6} sm={12}>
-                      {renderFormGroup(
-                        "Loan Amount (₹)",
-                        "loanAmount",
-                        "number",
-                        
-                      
-                      )}
-                    </Col>
-                    <Col md={6} sm={12}>
-                      {renderFormGroup("Loan Term", "loanTerm", "number")}
-                    </Col>
-                  </Row>
-
-                  <Row>
-                    <Col md={6} sm={12}>
-                      {renderFormGroup(
-                        "Loan Term Type",
-                        "loanTermType",
-                        "select",
-                        [
-                          { value: "1", label: "Daily" },
-                          { value: "2", label: "Weeks" },
-                          { value: "3", label: "Months" },
-                          { value: "4", label: "Years" },
-                        ]
-                      )}
-                    </Col>
-                    <Col md={6} sm={12}>
-                      {renderFormGroup(
-                        "Interest Rate (%)",
-                        "interestRate",
-                        "number"
-                      )}
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md={6} sm={12}>
-                      {renderFormGroup(
-                        "Loan Purpose",
-                        "loanPurpose",
-                        "select",
-                        [
-                          { value: "", label: "Select Loan Purpose" },
-                          { value: "1", label: "Children's Education" },
-                          { value: "2", label: "Medical Expenses" },
-                          { value: "3", label: "Business" },
-                          { value: "4", label: "Home" },
-                          { value: "5", label: "Other (Specify Below)" },
-                        ],
-                        formData.loanPurpose, // Controlled component value
-                        handleInputChange
-                      )}
-                    </Col>
-                    <Col md={6} sm={12}>
-                      {renderFormGroup(
-                        "Source of Repayment",
-                        "repaymentSource"
-                      )}
-                    </Col>
-                  </Row>
-                  <Row>
-                    {" "}
-                   
-                    {formData.loanPurpose === 5 && ( //Show "Other Purpose" input only if "Other" is selected
-                      <Col md={6} sm={12}>
-                        {renderFormGroup(
-                          "Specify Other Purpose",
-                          "loanPurposeOther",
-                          "text",
-                          [],
-                          formData.loanPurposeOther, // Controlled component value
-                          handleInputChange
-                        )}
-                      </Col>
-                    )}
-                  </Row>
-
-                  <Row className="text-center mt-3">
-                    <Col>
-                      <Button color="primary" onClick={handleLoadSchedule}>
-                        Load Loan Schedule
-                      </Button>
-                    </Col>
-                  </Row>
-
-                  
-                  <Modal
-                    isOpen={scheduleModalOpen}
-                    toggle={() => setScheduleModalOpen(false)}
-                    size="lg"
-                  >
-                    <ModalHeader toggle={() => setScheduleModalOpen(false)}>
-                      Loan Repayment Schedule
-                    </ModalHeader>
-                    <ModalBody>
-                      {loanDetails ? (
-                        <LoanCalculator
-                          initialLoanAmount={loanDetails.initialLoanAmount}
-                          initialLoanTerm={loanDetails.initialLoanTerm}
-                          initialTermType={loanDetails.initialTermType}
-                          initialInterestRate={loanDetails.initialInterestRate}
-                          borrowerName={`${formData.firstName || ""} ${formData.lastName || ""}`}
-                          contactNumber={formData.phone}
-                          loanDate={
-                            formData.loanDate ||
-                            new Date().toISOString().split("T")[0]
-                          }
-                        />
-                      ) : (
-                        <p className="text-center">
-                          Enter loan details to generate schedule.
-                        </p>
-                      )}
-                    </ModalBody>
-                    <ModalFooter>
-                      <Button
-                        color="secondary"
-                        onClick={() => setScheduleModalOpen(false)}
-                      >
-                        Close
-                      </Button>
-                    </ModalFooter>
-                  </Modal>
-                </Form>
-              </TabPane> */}
               {/* Tab 3: Employment Details */}
               <TabPane tabId={2}>
                 <Form>
@@ -866,7 +767,7 @@ const LoanApplicationForm = () => {
                       {renderFormGroup("Property Type", "propertyType")}
                     </Col>
                     <Col md={6} sm={12}>
-                      {renderFormGroup("Property Address", "propertyAddress")}
+                      {renderFormGroup("Property Address", "property_address")}
                     </Col>
                   </Row>
                   <Row>
@@ -901,720 +802,6 @@ const LoanApplicationForm = () => {
                   </Row>
                 </Form>
               </TabPane>
-
-              {/* Tab 6: References */}
-              <TabPane tabId={5}>
-                <Form>
-                <Row>
-                  <Col className="col-12">
-                    <CardBody className="position-relative">
-                      {/* Preview images in a circular frame */}
-                      <div
-                        className="position-absolute"
-                        style={{
-                          top: "40px",
-                          right: "82px",
-                          zIndex: "100",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                          {newNominee.nomineeProfilePhoto && (
-                          <div
-                            // key={i}
-                            className="d-flex flex-column align-items-center"
-                          >
-                            {/* Circular Image Preview */}
-                            <img
-                                src={newNominee.nomineeProfilePhoto.preview}
-                             alt="Nominee Profile"
-                              width="80"
-                              height="80"
-                              className="rounded-circle border"
-                              style={{ objectFit: "cover" }} // Ensure full image fits inside the circle
-                            />
-                            {/* <small className="d-block text-center">
-                              {f.name}
-                            </small>
-                            <small className="text-muted">
-                              {f.formattedSize}
-                            </small> */}
-                            <button
-                         className="btn btn-danger btn-sm"
-                          onClick={(e) => {
-                               e.stopPropagation();
-                               removeNomineeProfilePhoto();
-                             }}
-                         >
-              <i className="bx bx-trash"></i> Remove Photo
-            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <Form className="d-flex justify-content-end">
-                        <div className="col-md-4 col-lg-3">
-                          <Dropzone
-                            onDrop={(acceptedFiles) =>
-                              handleNomineeProfileUpload(acceptedFiles)
-                            }
-                            accept={{ "image/*": [] }}
-                            maxFiles={1}
-                            maxSize={2 * 1024 * 1024}
-                            onDropRejected={() => {
-                              alert(
-                                "Invalid file type or size. Please upload a valid file."
-                              );
-                            }}
-                          >
-                            {({ getRootProps, getInputProps }) => (
-                              <div
-                                className="dropzone"
-                                style={{ minHeight: "100px" }}
-                              >
-                                <div
-                                  {...getRootProps()}
-                                  className="dz-message p-3 border rounded text-center"
-                                  style={{ cursor: "pointer" }}
-                                >
-                                  <input {...getInputProps()} />
-                                  <div className="d-flex flex-column align-items-center">
-                                    {/* Placeholder Circle */}
-                                    <div
-                                      className="rounded-circle d-flex align-items-center justify-content-center border"
-                                      style={{
-                                        width: "80px",
-                                        height: "80px",
-                                        backgroundColor: "#f8f9fa",
-                                      }}
-                                    >
-                                      <i className="bx bx-camera fs-3 text-muted" />
-                                    </div>
-                                    <h6 className="mb-0 mt-2">
-                                      Upload Passport Photo
-                                    </h6>
-                                    <small className="text-muted">
-                                      Click or drag an image
-                                    </small>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </Dropzone>
-                          {errors.nomineeProfilePhoto && (
-                            <div className="text-danger small mt-2">
-                              {errors.nomineeProfilePhoto}
-                            </div>
-                          )}
-                        </div>
-                      </Form>
-                    </CardBody>
-                  </Col>
-                </Row>
-                  <div className="mb-4 p-3 border rounded">
-                 
-                    <Row>
-                      <Col md={6} sm={12}>
-                        {renderFormGroup(
-                          "Nominee Name",
-                          "nomineeName",
-                          "text",
-                          [],
-                          newNominee.nomineeName,
-                          (e) => handleNomineesChange("nomineeName", e.target.value)
-                        )}
-                        {errors["nominees.name"] && (
-                          <div className="text-danger small mt-2">
-                            {errors["nominees.name"]}
-                          </div>
-                        )}
-                      </Col>
-                      <Col md={6} sm={12}>
-                        {renderFormGroup(
-                          "Nominee Phone",
-                          "nomineePhone",
-                          "text",
-                          [],
-                          newNominee.nomineePhone,
-                          (e) => handleNomineesChange("nomineePhone", e.target.value)
-                        )}
-                        {errors["nominees.phone"] && (
-                          <div className="text-danger small mt-2">
-                            {errors["nominees.phone"]}
-                          </div>
-                        )}
-                      </Col>
-                    </Row>
-                    <Row>
-                      <Col md={6} sm={12}>
-                        {renderFormGroup(
-                          "Nominee Email (optional)",
-                          "nomineeEmail",
-                          "email",
-                          [],
-                          newNominee.nomineeEmail,
-                          (e) => handleNomineesChange("nomineeEmail", e.target.value)
-                        )}
-                        {errors["nominees.email"] && (
-                          <div className="text-danger small mt-2">
-                            {errors["nominees.email"]}
-                          </div>
-                        )}
-                      </Col>
-                      <Col md={6} sm={12}>
-                        {renderFormGroup(
-                          "Nominee Relationship",
-                          "nomineeRelationship",
-                          "select",
-                          [
-                            { value: "", label: "Select Relationship" },
-                            { value: "1", label: "Spouse" },
-                            { value: "2", label: "Child" },
-                            { value: "3", label: "Parent" },
-                            { value: "4", label: "Sibling" },
-                            { value: "5", label: "Other" },
-                          ],
-                          newNominee.nomineeRelationship,
-                          (e) => handleNomineesChange("nomineeRelationship", e.target.value)
-                        )}
-                        {newNominee.nomineeRelationship === 5 && (
-                          <div className="mt-2">
-                            {renderFormGroup(
-                              "Specify Relationship",
-                              "nomineeOtherRelationship",
-                              "text",
-                              [],
-                              newNominee.nomineeOtherRelationship,
-                              (e) => handleNomineesChange("nomineeOtherRelationship", e.target.value)
-                            )}
-                          </div>
-                        )}
-                      </Col>
-                    </Row>
-
-                    <Row>
-                      <Col md={12} sm={12}>
-                        {renderFormGroup(
-                          "Nominee Address",
-                          "nomineeAddress",
-                          "text",
-                          [],
-                          newNominee.nomineeAddress,
-                          (e) => handleNomineesChange("nomineeAddress", e.target.value)
-                        )}
-                      </Col>
-                    </Row>
-                    <Row>
-                      <Col md={12} sm={12}>
-                        <label
-                          htmlFor="nomineesIdProofType"
-                          className="form-label fw-bold text-primary"
-                        >
-                          Choose Nominee ID Proof Type
-                        </label>
-                        {renderFormGroup(
-                          "Nominee ID Proof Type",
-                          "nomineeidProofType",
-                          "select",
-                          [
-                            { value: "", label: "Select ID Proof" },
-                            { value: "1", label: "PAN Card" },
-                            { value: "2", label: "Aadhar Card" },
-                            { value: "3", label: "Voter ID" },
-                          ],
-                          newNominee.nomineeidProofType,
-                          (e) => handleNomineesChange("nomineeidProofType", e.target.value)
-                        )}
-                      </Col>
-                    </Row>
-                    <Row>
-                      <Col md={6} sm={12}>
-                        {renderFormGroup(
-                          "Nominee ID Proof Number",
-                          "nomineeidProofNumber",
-                          "text",
-                          [],
-                          newNominee.nomineeidProofNumber,
-                          (e) => handleNomineesChange("nomineeidProofNumber", e.target.value)
-                        )}
-                        <small className="form-text text-muted mt-1">
-                          {newNominee.nomineeidProofType === "pan" &&
-                            "Format: ABCDE1234F"}
-                          {newNominee.nomineeidProofType === "aadhar" &&
-                            "Format: 1234 5678 9012"}
-                          {newNominee.nomineeidProofType === "voterId" &&
-                            "Format: ABC1234567"}
-                        </small>
-                        {errors["nominees.idProofNumber"] && (
-                          <div className="text-danger small mt-2">
-                            {errors["nominees.idProofNumber"]}
-                          </div>
-                        )}
-                      </Col>
-                      <Col md={6} sm={12}>
-                        <label
-                          htmlFor="nomineesIdProofFile"
-                          className="form-label fw-bold text-primary"
-                        >
-                          Upload Nominee ID Proof
-                        </label>
-                        <Dropzone
-                          onDrop={(acceptedFiles) =>
-                            handleNomineeFileUpload(acceptedFiles)
-                          }
-                          onDropRejected={() => {
-                            alert(
-                              "Invalid file type or size. Please upload a valid file."
-                            );
-                          }}
-                          accept={{ "image/*": [], "application/pdf": [] }}
-                          maxFiles={1}
-                          maxSize={2 * 1024 * 1024}
-                        >
-                          {({ getRootProps, getInputProps, isDragActive }) => (
-                            <div className="dropzone">
-                              <div
-                                {...getRootProps()}
-                                className={`dz-message p-4 border-2 border-dashed rounded-3 ${
-                                  isDragActive
-                                    ? "border-primary bg-primary-10"
-                                    : "border-secondary"
-                                }`}
-                                style={{ minHeight: "100px" }}
-                              >
-                                <input {...getInputProps()} />
-                                <div className="text-center">
-                                  <div className="mb-2">
-                                    <i
-                                      className={`bx bx-cloud-upload fs-1 ${
-                                        isDragActive
-                                          ? "text-primary"
-                                          : "text-secondary"
-                                      }`}
-                                    />
-                                  </div>
-                                  <h6
-                                    className={`mb-1 ${
-                                      isDragActive
-                                        ? "text-primary"
-                                        : "text-dark"
-                                    }`}
-                                  >
-                                    {isDragActive
-                                      ? "Drop file here"
-                                      : "Upload ID Proof"}
-                                  </h6>
-                                  <small className="text-muted">
-                                    Supported formats: JPG, PNG, PDF (Max 2MB)
-                                  </small>
-                                </div>
-                              </div>
-
-                              {/* Display Image Preview */}
-                              {newNominee.nomineeidProofFile && (
-                                <div className="mt-3 text-center">
-                                  <p className="mb-1">
-                                    <strong>File:</strong>{" "}
-                                    {newNominee.nomineeidProofFile.name} (
-                                    {
-                                      newNominee.nomineeidProofFile
-                                        .formattedSize
-                                    }
-                                    )
-                                  </p>
-                                  {newNominee.nomineeidProofFile.type.startsWith(
-                                    "image/"
-                                  ) ? (
-                                    <img
-                                      src={
-                                        newNominee.nomineeidProofFile.preview
-                                      }
-                                      alt="ID Proof"
-                                      className="img-thumbnail"
-                                      style={{
-                                        maxWidth: "100px",
-                                        height: "auto",
-                                      }}
-                                    />
-                                  ) : (
-                                    <a
-                                      href={
-                                        newNominee.nomineeidProofFile.preview
-                                      }
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="btn btn-sm btn-primary"
-                                    >
-                                      View PDF
-                                    </a>
-                                  )}
-                                  {/* Remove Button */}
-                                  <div className="mt-2">
-                                    <button
-                                      className="btn btn-danger btn-sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation(); // Prevent Dropzone click
-                                        removeNomineeFile();
-                                      }}
-                                    >
-                                      <i className="bx bx-trash"></i> Remove
-                                      File
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </Dropzone>
-
-                        {errors["nominees.idProofFile"] && (
-                          <div className="text-danger small mt-2">
-                            {errors["nominees.idProofFile"]}
-                          </div>
-                        )}
-                      </Col>
-                    </Row>
-                    <Row className="mt-3">
-                      <Col md={12} className="text-center">
-                        <Button
-                          color="primary"
-                          aria-label="Add Nominee"
-                          onClick={addNominee}
-                        >
-                          <i className="bx bx-plus me-1"></i>Add Nominee
-                        </Button>
-                      </Col>
-                    </Row>
-                  </div>
-
-                  {/* Table to display nominees */}
-                  <div className="mt-4">
-                    <h5>Nominees List</h5>
-                    <Table striped bordered responsive>
-                      <thead>
-                        <tr>
-                        <th>profilephoto</th>
-                          <th>Name</th>
-                          <th>Address</th>
-                          <th>Relationship</th>
-                          <th>ID Proof</th>
-                          <th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {nominees.length === 0 ? (
-                          <tr>
-                            <td colSpan="5" className="text-center">
-                              No nominees added yet.
-                            </td>
-                          </tr>
-                        ) : (
-                          nominees.map((nominees, index) => (
-                            <tr key={index}>
-                              <td>{nominees.nomineeProfilePhoto? (
-                                  <a
-                                    href={nominees.nomineeidProofFile.preview}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    View ID Proof
-                                  </a>
-                                ) : (
-                                  "Not Uploaded"
-                                )}</td>
-                              <td>{nominees.nomineeName}</td>
-                              <td>{nominees.nomineeAddress}</td>
-
-                              <td>
-                                {nominees.nomineeRelationship=="1"?"Spouse": nominees.nomineeRelationship=="2"?"Child": nominees.nomineeRelationship=="3"?"Parent": nominees.nomineeRelationship=="4"?"Sibling": nominees.nomineeOtherRelationship }
-                              </td>
-                              <td>
-                                {nominees.nomineeidProofType}
-                                {nominees.nomineeidProofFile ? (
-                                  <a
-                                    href={nominees.nomineeidProofFile.preview}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    View ID Proof
-                                  </a>
-                                ) : (
-                                  "Not Uploaded"
-                                )}
-                              </td>
-                              <td>
-                                <Button
-                                  color="danger"
-                                  size="sm"
-                                  onClick={() => removeNominee(index)}
-                                >
-                                  <i className="bx bx-trash"></i> Remove
-                                </Button>
-                                <Button
-                                  color="warning"
-                                  size="sm"
-                                  onClick={() => editnominee(index)}
-                                >
-                                  <i className="bx bx-trash"></i> edit
-                                </Button>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </Table>
-                  </div>
-                </Form>
-              </TabPane>
-              {/* <TabPane tabId={7}>
-                <Form>
-                  <Row>
-                    <Col md={12}>
-                      <div className="declaration-text mt-3">
-                        <h5>
-                          Declaration and Undertaking by Applicant to SPK Micro
-                          Financial Services (Promoted by SPK Foundation)
-                        </h5>
-                        <p>
-                          I/We, declare that all the information given in the
-                          application form are true, correct and complete and
-                          that they shall form the basis of any loan SPK Micro
-                          Financial Services (Promoted by SPK Foundation) may
-                          decide to grant me/us. SPK Micro Financial Services
-                          (Promoted by SPK Foundation) may seek / receive
-                          information from any source/person to consider this
-                          application. I/We further agree that my/our loan shall
-                          be governed by rules of SPK Micro Financial Services
-                          (Promoted by SPK Foundation) which may be in force
-                          time to time. I/We agree that SPK Micro Financial
-                          Services (Promoted by SPK Foundation) reserves the
-                          right to accept/reject this application without
-                          assigning any reason whatsoever. I/We have read the
-                          brochure and understood the contents. I/We understand
-                          that the fee paid along with the loan application form
-                          is non-refundable. I/We undertake to inform SPK Small
-                          Finance Bank regarding any change in my/our
-                          occupation/employment/residential address and to
-                          provide any further information that SPK Micro
-                          Financial Services (Promoted by SPK Foundation)
-                          require. SPK Micro Financial Services (Promoted by SPK
-                          Foundation) may make available any information
-                          contained in this form, other documents submitted to
-                          SPK Micro Financial Services (Promoted by SPK
-                          Foundation) and, information pertaining to any
-                          institution or body. I/We confirm that I/We have/had
-                          no insolvency proceedings against me/us nor I/We
-                          have/had ever been adjudicated insolvent. CIBIL- SPK
-                          can initiate any Internal/External/3rd Party
-                          Verification with respect to Loan Application.
-                        </p>
-                      </div>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md={12}>
-                      <FormGroup check>
-                        <Label check>
-                          <Input
-                            type="checkbox"
-                            name="agreeTerms"
-                            onChange={handleInputChange}
-                          />{" "}
-                          I agree to the terms and conditions
-                        </Label>
-                      </FormGroup>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md={12}>
-                      <FormGroup check>
-                        <Label check>
-                          <Input
-                            type="checkbox"
-                            name="agreeCreditCheck"
-                            onChange={handleInputChange}
-                          />{" "}
-                          I agree to a credit check
-                        </Label>
-                      </FormGroup>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md={12}>
-                      <FormGroup check>
-                        <Label check>
-                          <Input
-                            type="checkbox"
-                            name="agreeDataSharing"
-                            onChange={handleInputChange}
-                          />{" "}
-                          I agree to data sharing
-                        </Label>
-                      </FormGroup>
-                    </Col>
-                  </Row>
-                </Form>
-              </TabPane> */}
-              {/* <TabPane tabId={8}>
-                <Row>
-                  <Col className="col-12">
-                    <CardBody className="position-relative">
-                      
-                      <div // Preview images in a circular frame 
-                        className="position-absolute"
-                        style={{
-                          top: "40px",
-                          right: "82px",
-                          zIndex: "100",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        {profilephoto.map((f, i) => (
-                          <div
-                            key={i}
-                            className="d-flex flex-column align-items-center"
-                          >
-                            
-                            <img // Circular Image Preview
-                              src={f.preview}
-                              alt={f.name}
-                              width="80"
-                              height="80"
-                              className="rounded-circle border"
-                              style={{ objectFit: "cover" }} // Ensure full image fits inside the circle
-                            />
-                            <small className="d-block text-center">
-                              {f.name}
-                            </small>
-                            <small className="text-muted">
-                              {f.formattedSize}
-                            </small>
-                            <button
-                              type="button"
-                              className="btn btn-link btn-sm text-danger p-0"
-                              onClick={() => {
-                                setprofilephoto(
-                                  profilephoto.filter((_, index) => index !== i)
-                                );
-                              }}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-
-                      <Form className="d-flex justify-content-end">
-                        <div className="col-md-4 col-lg-3">
-                          <Dropzone
-                            onDrop={(acceptedFiles) =>
-                              handleProfilePhoto(acceptedFiles)
-                            }
-                            accept={{ "image/*": [] }}
-                            maxFiles={1}
-                            maxSize={2 * 1024 * 1024}
-                            onDropRejected={() => {
-                              alert(
-                                "Invalid file type or size. Please upload a valid file."
-                              );
-                            }}
-                          >
-                            {({ getRootProps, getInputProps }) => (
-                              <div
-                                className="dropzone"
-                                style={{ minHeight: "100px" }}
-                              >
-                                <div
-                                  {...getRootProps()}
-                                  className="dz-message p-3 border rounded text-center"
-                                  style={{ cursor: "pointer" }}
-                                >
-                                  <input {...getInputProps()} />
-                                  <div className="d-flex flex-column align-items-center">
-                                    
-                                    <div // Placeholder Circle 
-                                      className="rounded-circle d-flex align-items-center justify-content-center border"
-                                      style={{
-                                        width: "80px",
-                                        height: "80px",
-                                        backgroundColor: "#f8f9fa",
-                                      }}
-                                    >
-                                      <i className="bx bx-camera fs-3 text-muted" />
-                                    </div>
-                                    <h6 className="mb-0 mt-2">
-                                      Upload Passport Photo
-                                    </h6>
-                                    <small className="text-muted">
-                                      Click or drag an image
-                                    </small>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </Dropzone>
-                          {errors.passportPhoto && (
-                            <div className="text-danger small mt-2">
-                              {errors.passportPhoto}
-                            </div>
-                          )}
-                        </div>
-                      </Form>
-                    </CardBody>
-                  </Col>
-                </Row>
-                <Form>
-                  <Row className="mt-3">
-                    <Col md={4} sm={12}>
-                      {renderFormGroup("Translator Name", "translatorName")}
-                    </Col>
-                    <Col md={4} sm={12}>
-                      {renderFormGroup(
-                        "Place",
-                        "translatorPlace",
-                        "text",
-                        [],
-                        formData.translatorPlace,
-                        handleInputChange
-                      )}
-                    </Col>
-                    <Col md={4} sm={12}>
-                      {renderFormGroup(
-                        "Date",
-                        "LoanRegDate",
-                        "date",
-                        [],
-                        formData.LoanRegDate,
-                        handleInputChange,
-                        true 
-                        // Current date in YYYY-MM-DD format
-                      
-                      )}
-                    </Col>
-                  </Row>
-
-                  <Row className="mt-3">
-                    <Col md={12}>
-                      <FormGroup>
-                        <Label for="remarks">Remarks</Label>
-                        <Input
-                          type="textarea"
-                          name="remarks"
-                          id="remarks"
-                       
-                          onChange={handleInputChange}
-                        />
-                      </FormGroup>
-                    </Col>
-                  </Row>
-                </Form>
-              </TabPane> */}
-
               <TabPane tabId={6}>
                 <div className="text-center mt-3">
                   <h5>Application Submitted Successfully</h5>
@@ -1622,40 +809,7 @@ const LoanApplicationForm = () => {
                 </div>
               </TabPane>
 
-              <Modal isOpen={modalOpen} toggle={toggleModal} size="lg">
-                <ModalHeader toggle={toggleModal}>Form Preview</ModalHeader>
-                <ModalBody>
-                  <div ref={printRef}>
-                    <PDFPreview 
-                      formData={formData}
-                      passportPhoto={
-                        profilephoto.length > 0 ? profilephoto[0].preview : null
-                      } 
-                      idProofFile={idProofFile}
-                      nominees={nominees} 
-                    />
-                  </div> 
-                </ModalBody>
-                <ModalFooter className="d-flex flex-wrap justify-content-between">
-                  
-                  <Button // Back Button - Full width on small screens
-                    color="secondary"
-                    onClick={toggleModal}
-                    className="w-100 w-md-auto"
-                  >
-                    <i className="bx bx-arrow-back me-1"></i> Back
-                  </Button>
 
-                  
-                  <Button // Print Button - Full width on small screens
-                    color="primary"
-                    onClick={handlePrint}
-                    className="w-100 w-md-auto mt-2 mt-md-0"
-                  >
-                    <i className="bx bx-printer me-1"></i> Print Form
-                  </Button>
-                </ModalFooter>
-              </Modal>
             </TabContent>
             <ul className="pager wizard twitter-bs-wizard-pager-link d-flex flex-wrap justify-content-between mt-3">
               <li
@@ -1671,12 +825,12 @@ const LoanApplicationForm = () => {
               </li>
 
               <li className="next">
-                {activeTab === 5 ? (
+                {activeTab === 4 ? (
                   <div className="d-flex flex-wrap gap-3">
                     <Button
                       color="success"
                       onClick={handleSubmit}
-                      className="w-100 w-md-auto" 
+                      className="w-100 w-md-auto"
                     >
                       Submit Application{" "}
                       <i className="bx bx-check-circle ms-1"></i>
@@ -1689,7 +843,7 @@ const LoanApplicationForm = () => {
                       <i className="bx bx-search-alt ms-1"></i> Preview Form
                     </Button>
                   </div>
-                ) : activeTab === 5 ? (
+                ) : activeTab === 4 ? (
                   <PDFDownloadLink
                     document={<PDFPreview formData={formData} />} // PDF Document to download
                     fileName="Loan_Application.pdf"

@@ -99,7 +99,7 @@ const Dashboard = () => {
                                                     {widget.title}
                                                 </span>
                                                 <h4 className="mb-3">
-                                                    {widget.isDoller === true ? "$" : ""}
+                                                    {widget.isDoller === true ? "₹" : ""}
                                                     <span className="counter-value">
                                                         <CountUp
                                                             start={0}
@@ -123,20 +123,7 @@ const Dashboard = () => {
                                                 />
                                             </Col>
                                         </Row>
-                                        <div className="text-nowrap">
-                                            <span
-                                                className={
-                                                    "badge bg-" +
-                                                    widget.statusColor +
-                                                    "-subtle text-" +
-                                                    widget.statusColor
-                                                }
-                                            >
-                                                {widget.rank}
-                                            </span>
-                                            <span className="ms-1 text-muted font-size-13"> Since last week
-                                            </span>
-                                        </div>
+                                
                                     </CardBody>
                                 </Card>
                             </Col>

@@ -1,17 +1,25 @@
-from rest_framework import viewsets
+from rest_framework import generics, status
 from rest_framework.response import Response
-from .models import Loan, Employment, BankDetails
-from .serializers import LoanSerializer, EmploymentSerializer, BankDetailsSerializer
+from .models import Applicant
+from .serializers import LoanApplicationSerializer, ApplicantSerializer
 
-class AllDetailsViewSet(viewsets.ViewSet):
-    def list(self, request):
-        loans = Loan.objects.all()
-        employments = Employment.objects.all()
-        bank_details = BankDetails.objects.all()
+class LoanApplicationCreateView(generics.CreateAPIView):
+    serializer_class = LoanApplicationSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+        
         response_data = {
-            "loans": LoanSerializer(loans, many=True).data,
-            "employments": EmploymentSerializer(employments, many=True).data,
-            "bank_details": BankDetailsSerializer(bank_details, many=True).data
+            'userID': result['applicant'].userID,
+            'message': result['status'],
+            'status': 'success'
         }
-        return Response(response_data)
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+class ApplicantDetailView(generics.RetrieveAPIView):
+    queryset = Applicant.objects.all()
+    serializer_class = ApplicantSerializer
+    lookup_field = 'userID'
