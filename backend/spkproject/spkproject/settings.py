@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:backend/spkenv/spkproject/spkproject/settings.py
+=======
+<<<<<<<< HEAD:backend/spkenv/spkproject/spkproject/settings.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 """
 Django settings for spkproject project.
 
@@ -156,7 +160,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media', 'uploads')
 # CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
 CORS_ALLOW_ALL_ORIGINS = True 
 CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+<<<<<<< HEAD
 =======
+=======
+========
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 """
 Django settings for spkproject project.
 
@@ -314,4 +322,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media', 'uploads')
 # ]
 # CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
 CORS_ALLOW_ALL_ORIGINS = True 
+<<<<<<< HEAD
 >>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/spkproject/settings.py
+=======
+>>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/spkproject/settings.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4

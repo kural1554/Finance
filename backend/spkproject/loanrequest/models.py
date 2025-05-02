@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:backend/spkenv/spkproject/loanrequest/models.py
+=======
+<<<<<<<< HEAD:backend/spkenv/spkproject/loanrequest/models.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from django.db import models
 
 class LoanRequest(models.Model):
@@ -14,7 +18,11 @@ class LoanRequest(models.Model):
     def __str__(self):
         return f"{self.name} - {self.loan_purpose}"
 
+<<<<<<< HEAD
 =======
+=======
+========
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from django.db import models
 
 class LoanRequest(models.Model):
@@ -26,4 +34,8 @@ class LoanRequest(models.Model):
     def __str__(self):
         return f"{self.name} - {self.loan_purpose}"
 
+<<<<<<< HEAD
 >>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/loanrequest/models.py
+=======
+>>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/loanrequest/models.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4

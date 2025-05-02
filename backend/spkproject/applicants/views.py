@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:backend/spkenv/spkproject/applicants/views.py
+=======
+<<<<<<<< HEAD:backend/spkenv/spkproject/applicants/views.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from rest_framework import viewsets, status
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
@@ -713,7 +717,11 @@ def partial_update_applicant(request, applicant_id):
             "status": "error",
             "message": str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
+<<<<<<< HEAD
 =======
+=======
+========
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from rest_framework import viewsets, status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
@@ -837,4 +845,8 @@ def validate_applicant(request):
             return JsonResponse({'valid': False, 'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Only POST method allowed'}, status=405)
+<<<<<<< HEAD
 >>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/applicants/views.py
+=======
+>>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/applicants/views.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4

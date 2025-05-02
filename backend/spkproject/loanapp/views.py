@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:backend/spkenv/spkproject/loanapp/views.py
+=======
+<<<<<<<< HEAD:backend/spkenv/spkproject/loanapp/views.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 # views.py
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -117,7 +121,11 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
                 {"valid": False, "message": "An unexpected error occurred during validation."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+<<<<<<< HEAD
 =======
+=======
+========
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
@@ -146,4 +154,8 @@ class LoanApplicationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPI
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
+<<<<<<< HEAD
 >>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/loanapp/views.py
+=======
+>>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/loanapp/views.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4

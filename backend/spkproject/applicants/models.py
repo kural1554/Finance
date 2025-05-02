@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:backend/spkenv/spkproject/applicants/models.py
+=======
+<<<<<<<< HEAD:backend/spkenv/spkproject/applicants/models.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 import uuid
 from django.db import models
 from django.db.models import Max
@@ -150,7 +154,11 @@ class PropertyDetails(models.Model):
         self.save(update_fields=['is_deleted'])
 
     def __str__(self):
+<<<<<<< HEAD
 =======
+=======
+========
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 import uuid
 from django.db import models
 from django.db.models import Max
@@ -286,5 +294,9 @@ class PropertyDetails(models.Model):
         self.save(update_fields=['is_deleted'])
 
     def __str__(self):
+<<<<<<< HEAD
 >>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/applicants/models.py
+=======
+>>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/applicants/models.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
         return f"{self.property_type} - LoanID: {self.applicant.loan_id}"

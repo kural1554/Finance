@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:backend/spkenv/spkproject/applicants/serializers.py
+=======
+<<<<<<<< HEAD:backend/spkenv/spkproject/applicants/serializers.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from rest_framework import serializers
 from django.db import transaction
 from .models import Applicant, EmploymentDetails, PropertyDetails, ApplicantProof, BankingDetails
@@ -241,7 +245,11 @@ class ApplicantSerializer(serializers.ModelSerializer):
             ApplicantProof.objects.create(applicant=applicant, **proof_data)
 
         return applicant
+<<<<<<< HEAD
 =======
+=======
+========
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from rest_framework import serializers
 from .models import Applicant, EmploymentDetails, PropertyDetails, ApplicantProof, BankingDetails
 
@@ -342,4 +350,8 @@ class ApplicantSerializer(serializers.ModelSerializer):
                ApplicantProof.objects.create(applicant=instance, **proof)        
 
         return instance
+<<<<<<< HEAD
 >>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/applicants/serializers.py
+=======
+>>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/applicants/serializers.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4

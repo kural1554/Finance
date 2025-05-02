@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:backend/spkenv/spkproject/loanapp/models.py
+=======
+<<<<<<<< HEAD:backend/spkenv/spkproject/loanapp/models.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 import uuid
 from django.db import models
 
@@ -59,7 +63,11 @@ class EMISchedule(models.Model):
 
     def __str__(self):
         return f"EMI {self.month} for {self.loan_application.applicantID}"
+<<<<<<< HEAD
 =======
+=======
+========
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from django.db import models
 from django.core.validators import MinValueValidator
 
@@ -136,4 +144,8 @@ class EMISchedule(models.Model):
 
     def __str__(self):
         return f"Month {self.month} - {self.loan_application.first_name}"
+<<<<<<< HEAD
 >>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/loanapp/models.py
+=======
+>>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/loanapp/models.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4

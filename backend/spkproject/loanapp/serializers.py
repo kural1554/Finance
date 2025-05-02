@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:backend/spkenv/spkproject/loanapp/serializers.py
+=======
+<<<<<<<< HEAD:backend/spkenv/spkproject/loanapp/serializers.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from rest_framework import serializers
 from .models import LoanApplication, Nominee, EMISchedule
 import json
@@ -109,7 +113,11 @@ def update(self, instance, validated_data):
 
     return instance
 
+<<<<<<< HEAD
 =======
+=======
+========
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from rest_framework import serializers
 from .models import LoanApplication, Nominee, EMISchedule
 
@@ -170,4 +178,8 @@ class LoanApplicationSerializer(serializers.ModelSerializer):
                 EMISchedule.objects.create(loan_application=instance, **emi_data)
                 
         return instance
+<<<<<<< HEAD
 >>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/loanapp/serializers.py
+=======
+>>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/loanapp/serializers.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4

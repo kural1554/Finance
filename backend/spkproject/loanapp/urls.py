@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:backend/spkenv/spkproject/loanapp/urls.py
+=======
+<<<<<<<< HEAD:backend/spkenv/spkproject/loanapp/urls.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import LoanApplicationViewSet
@@ -15,7 +19,11 @@ urlpatterns = [
 
 
 
+<<<<<<< HEAD
 =======
+=======
+========
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
 from django.urls import path
 from .views import LoanApplicationListCreateView, LoanApplicationRetrieveUpdateDestroyView
 
@@ -25,4 +33,8 @@ urlpatterns = [
 ]
 
 
+<<<<<<< HEAD
 >>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/loanapp/urls.py
+=======
+>>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4:backend/spkproject/loanapp/urls.py
+>>>>>>> b56f4b28797c8f50b6ec46a22f57826447db9aa4
