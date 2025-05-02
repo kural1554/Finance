@@ -39,7 +39,7 @@ export const formTabs = [
     bankName: "",
     ifscCode: "",
     bankBranch: "",
-    accountType: "",
+    accountType: "1",
   
     // Property Details
     propertyType: "",

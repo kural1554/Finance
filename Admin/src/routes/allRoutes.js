@@ -83,6 +83,9 @@ import ChartjsChart from "../pages/Charts/ChartjsChart";
 import LoanProcess from "../pages/LoanProcess/LoanProcess";
 //ApprovalStatus
 import ApprovalStatus from "../pages/ApprovalStatus/ApprovalStatus";
+//LoanApplicantEdit
+
+import LoanApplicantEdit from "../pages/Chat/LoanApplicantEdit";
 
 // Maps
 import MapsGoogle from "../pages/Maps/MapsGoogle";
@@ -121,8 +124,9 @@ const userRoutes = [
 
   //Calendar
   { path: "/apps-calendar", component: <Calendar /> },
+//LoanAppicantEdit 
 
-
+{ path: "/LoanApplicantEdit", component: <LoanApplicantEdit /> },
   //Chat
   { path: "/apps-chat", component: <Chat /> },
   { path: "/status", component: <Status /> },

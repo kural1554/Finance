@@ -1,5 +1,6 @@
 from django.urls import path, include
-
+from django.conf import settings
+from django.conf.urls.static import static
 urlpatterns = [
     path('applicants/', include('applicants.urls')),  
     path('loans/', include('loans.urls')),  
@@ -13,3 +14,5 @@ urlpatterns = [
     path('apply-loan/', include('loanapp.urls')),
     path('loanrequest/',include('loanrequest.urls')),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

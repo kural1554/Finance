@@ -38,11 +38,14 @@ import { useForm, Controller } from "react-hook-form"; // Added Controller
 import classnames from "classnames";
 import { Link } from "react-router-dom";
 import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer"; // Combined imports
-import PDFPreview from "./PDFdocument"; // Assuming this exists and works
+import LoanPDFdocument, { PDFPreview } from './LoanPDFdocument'; // Assuming this exists and works
 import { toast } from "react-toastify";
 import axios from "axios";
+// API URL for applicant data
 
 const LoanProcess = () => {
+
+
   // drop down optision 
   const termTypeOptions = [
     { value: "", label: "Select term type..." },
@@ -162,7 +165,7 @@ const LoanProcess = () => {
   // Checkbox state is handled by RHF (agreeTerms, etc.)
 
   // --- Tab 6 State (Documents) ---
-  const [profilephoto, setprofilephoto] = useState([]); // For applicant passport photo
+  // const [profilephoto, setprofilephoto] = useState([]); // For applicant passport photo
 
   // --- PDF Preview Modal ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -180,17 +183,17 @@ const LoanProcess = () => {
   // Consistent Backend Validation Function
   const validateApplicantBackend = async (applicantData) => {
     setLoading(true);
-  
+
     const BASE_URL = process.env.REACT_APP_API_BASE_URL;
     const VALIDATION_URL = `${BASE_URL}/applicants/validate-applicant/`;
-  
+
     try {
       const response = await axios.post(VALIDATION_URL, applicantData);
-  
+
       setLoading(false);
       console.log("Backend Raw Response:", response);
       console.log("Backend Response Data:", response.data);
-  
+
       if (response.data && response.data.valid === true) {
         console.log("Backend validation SUCCESS");
         return { valid: true, message: response.data.message || "Applicant verified" };
@@ -205,7 +208,7 @@ const LoanProcess = () => {
     } catch (error) {
       setLoading(false);
       console.error("Axios error during validation:", error);
-  
+
       if (error.response) {
         console.error("Error Response Data:", error.response.data);
         console.error("Error Response Status:", error.response.status);
@@ -215,7 +218,7 @@ const LoanProcess = () => {
       } else {
         console.error("Error Message:", error.message);
       }
-  
+
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
@@ -224,108 +227,87 @@ const LoanProcess = () => {
       return { valid: false, message: errorMessage };
     }
   };
-  
-
-
   // Final Submit Handler (triggered by RHF's handleSubmit)
-  const onFinalSubmit = (data) => {
+  const onFinalSubmit = async (data) => {
+    console.log("🟢 onFinalSubmit triggered");
+    console.log("Submitted data:", data);
     setLoading(true);
-    console.log("Final Form Data Submitted:", data);
     console.log("Nominees:", nominees);
     console.log("RHF Data Received by onFinalSubmit:", data);
-    const formDataToSubmit = new FormData();
-
-    // Append form fields from react-hook-form
-    for (const key in data) {
-      formDataToSubmit.append(key, data[key]);
-    }
-
-    // Append applicant photo if exists
-    if (profilephoto.length > 0) {
-      formDataToSubmit.append('applicant_photo', profilephoto[0]);
-    }
+  
+    // Prepare full JSON payload for submission
     const fullJsonPayload = {
-      ...data,  // RHF form data
-      nominees: nominees.map(n => ({
-        name: n.nomineeName,
-        phone: n.nomineePhone,
-        email: n.nomineeEmail,
-        relationship: n.nomineeRelationship === '5' ? n.nomineeOtherRelationship : n.nomineeRelationship,
-        address: n.nomineeAddress,
-        idProofType: n.nomineeidProofType,
-        idProofNumber: n.nomineeidProofNumber,
+      ...data,
+      nominees: nominees.map((nominee) => ({
+        name: nominee.nomineeName,
+        phone: nominee.nomineePhone,
+        email: nominee.nomineeEmail,
+        relationship: nominee.nomineeRelationship === '5' ? nominee.nomineeOtherRelationship : nominee.nomineeRelationship,
+        address: nominee.nomineeAddress,
+        idProofType: nominee.nomineeidProofType,
+        idProofNumber: nominee.nomineeidProofNumber,
+        profile_photo: nominee.nomineeProfilePhoto?.name || null,
+        id_proof_file: nominee.nomineeidProofFile?.name || null
       })),
-      emiSchedule: emiDetails,
-      // Add file names if needed (for preview)
-      applicant_photo: profilephoto.length > 0 ? profilephoto[0].name : null,
-      nominee_files: nominees.map((n, i) => ({
-        profile_photo: n.nomineeProfilePhoto?.name || null,
-        id_proof_file: n.nomineeidProofFile?.name || null,
-      })),
+      emiSchedule: emiDetails,  // assuming emiDetails is correctly structured
     };
-
-    console.log("🚀 Full JSON Payload Preview:", JSON.stringify(fullJsonPayload, null, 2));
-    const loanDetailsPayload = {
-      amount: data.amount,           // Get from RHF data object
-      term: data.term,               // Get from RHF data object
-      termType: data.termType,       // Get from RHF data object
-      interestRate: data.interestRate, // Get from RHF data object
-      purpose: data.purpose,         // Get from RHF data object
-      repaymentSource: data.repaymentSource // Get from RHF data object
-    };
-    // Append nominee details as JSON
-    // Append nominee details as JSON
-    formDataToSubmit.append('nominees', JSON.stringify(
-      nominees.map(n => ({
-        name: n.nomineeName,
-        phone: n.nomineePhone,
-        email: n.nomineeEmail,
-        relationship: n.nomineeRelationship === '5' ? n.nomineeOtherRelationship : n.nomineeRelationship,
-        address: n.nomineeAddress,
-        idProofType: n.nomineeidProofType,
-        idProofNumber: n.nomineeidProofNumber,
-      }))
-    ));
-
-    // Append nominee files
+  
+    const preview = JSON.stringify(fullJsonPayload, null, 2);
+    console.log("🚀 Full JSON Payload Preview:");
+    console.log(preview);
+  
+    // Prepare FormData to send files and data
+    const formDataToSubmit = new FormData();
+  
+    // Add all non-file data to FormData
+    for (const key in fullJsonPayload) {
+      if (fullJsonPayload[key] && typeof fullJsonPayload[key] !== 'object') {
+        formDataToSubmit.append(key, fullJsonPayload[key]);
+      }
+    }
+  
+    // Add nominees array as JSON string
+    formDataToSubmit.append('nominees', JSON.stringify(fullJsonPayload.nominees));
+  
+    // Add EMI schedule array as JSON string
+    formDataToSubmit.append('emiSchedule', JSON.stringify(fullJsonPayload.emiSchedule));
+  
+    // Add files (photos, proof files) for each nominee
     nominees.forEach((nominee, index) => {
       if (nominee?.nomineeProfilePhoto instanceof File) {
-        formDataToSubmit.append(`nominee_${index}_profile_photo`, nominee.nomineeProfilePhoto, nominee.nomineeProfilePhoto.name);
+        formDataToSubmit.append(`nominee_${index}_profile_photo`, nominee.nomineeProfilePhoto);
       }
       if (nominee?.nomineeidProofFile instanceof File) {
-        formDataToSubmit.append(`nominee_${index}_id_proof`, nominee.nomineeidProofFile, nominee.nomineeidProofFile.name);
+        formDataToSubmit.append(`nominee_${index}_id_proof`, nominee.nomineeidProofFile);
       }
     });
-
-
-    // ✅ Append EMI summary JSON
-    formDataToSubmit.append("emiSchedule", JSON.stringify(emiSummary));
-
-    // Submit form data to API
-    axios.post('http://localhost:8080/api/apply-loan/apply-loan/', loanDetailsPayload, { // Send the specific payload
-      headers: {
-        'Content-Type': 'application/json', // Set content type to JSON
-      },
-    })
-      .then(response => {
-        setLoading(false);
-        console.log("Loan Details Submission Response:", response.data); // Log response
-        toast.success('✅ Loan Details Submitted Successfully!');
-        // Reset the form or navigate away if needed
-        // reset();
-        // setActiveTab(1); // Example: Go back to start
-      })
-      .catch(error => {
-        setLoading(false);
-        console.error("Submission Error:", error.response || error.message || error); // Log detailed error
-        // Display specific error from backend if available
-        const errorMessage = error.response?.data?.message || error.response?.data?.error || '❌ Error submitting loan details. Please check details.';
-        toast.error(errorMessage);
+  
+    // API URL for submission
+    const API_URL = `${process.env.REACT_APP_API_BASE_URL}/apply-loan/loan-applications/`;
+  
+    try {
+      // Submit the form with multipart/form-data headers for file uploads
+      const response = await axios.post(API_URL, formDataToSubmit, {
+        headers: {
+          'Content-Type': 'multipart/form-data',  // for file uploads
+        },
       });
+  
+      setLoading(false);
+      console.log("Submission Response:", response.data);
+      toast.success('✅ Loan Application Submitted Successfully!');
+      reset();  // Reset form state if necessary
+      setActiveTab(1);  // Reset the active tab if necessary
+    } catch (error) {
+      setLoading(false);
+      console.error("Submission Error:", error.response || error.message || error);
+      const errorMessage = error.response?.data?.message ||
+        error.response?.data?.error ||
+        '❌ Error submitting loan application. Please check details.';
+      toast.error(errorMessage);
+    }
   };
-  //--check the data is full json ---
-
-
+  
   // --- EMI Calculation ---
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
@@ -361,8 +343,6 @@ const LoanProcess = () => {
       emiDate.setMonth(firstEMIDate.getMonth() + i); // Move to the next month for each EMI
       emiDates.push(emiDate);
     }
-
-    // Format the dates to a readable format (e.g., YYYY-MM-DD)
     const formattedEMIDates = emiDates.map(date => date.toISOString().split('T')[0]);
 
     return formattedEMIDates;
@@ -585,7 +565,7 @@ const LoanProcess = () => {
   useEffect(() => {
     // Clean up object URLs when component unmounts or files change
     return () => {
-      profilephoto.forEach(file => URL.revokeObjectURL(file.preview));
+      // profilephoto.forEach(file => URL.revokeObjectURL(file.preview));
       nominees.forEach(nominee => {
         if (nominee.nomineeProfilePhoto?.preview) URL.revokeObjectURL(nominee.nomineeProfilePhoto.preview);
         if (nominee.nomineeidProofFile?.preview) URL.revokeObjectURL(nominee.nomineeidProofFile.preview);
@@ -593,7 +573,7 @@ const LoanProcess = () => {
       if (newNominee.nomineeProfilePhoto?.preview) URL.revokeObjectURL(newNominee.nomineeProfilePhoto.preview);
       if (newNominee.nomineeidProofFile?.preview) URL.revokeObjectURL(newNominee.nomineeidProofFile.preview);
     };
-  }, [profilephoto, nominees, newNominee]); // Add dependencies
+  }, [nominees, newNominee]); // Add dependencies
 
   // --- Helper Functions ---
   const formatCurrency = (value) =>
@@ -1736,7 +1716,7 @@ const LoanProcess = () => {
                       </Button>
                       <Button
                         color="success"
-                        type="submit" // IMPORTANT: This triggers RHF's handleSubmit -> onFinalSubmit
+                        type="submit"
                         disabled={loading}
                       >
                         {loading ? (
@@ -1781,12 +1761,10 @@ const LoanProcess = () => {
           {/* Pass necessary data to PDFPreview/PDFDocument */}
           {/* You might need to get all form values: const allData = getValues(); */}
           <PDFViewer width="100%" height="100%">
-            {/* Ensure PDFDocument receives ALL data: RHF fields, nominees, emiDetails, etc. */}
-            <PDFPreview
-              formData={getValues()} // Pass all RHF data
+            <LoanPDFdocument
+              formData={getValues()}
               emiDetails={emiDetails}
               nominees={nominees}
-            // Pass applicant photo URL if needed (might be tricky with blob URLs)
             />
           </PDFViewer>
         </ModalBody>
@@ -1794,20 +1772,15 @@ const LoanProcess = () => {
           {/* Provide PDFDownloadLink inside the Modal as well? */}
           <PDFDownloadLink
             document={
-              <PDFPreview
+              <LoanPDFdocument
                 formData={getValues()}
                 emiDetails={emiDetails}
                 nominees={nominees}
               />
             }
-            fileName="loan_application_preview.pdf"
-            style={{ textDecoration: 'none' }}
+            fileName="loan_application.pdf"
           >
-            {({ blob, url, loading: pdfLoading, error }) => (
-              <Button color="success" disabled={pdfLoading}>
-                {pdfLoading ? 'Generating PDF...' : <><i className="bx bxs-download me-1"></i> Download PDF</>}
-              </Button>
-            )}
+            {({ loading }) => (loading ? 'Loading document...' : 'Download PDF')}
           </PDFDownloadLink>
           <Button color="secondary" onClick={toggleModal}>Close</Button>
         </ModalFooter>

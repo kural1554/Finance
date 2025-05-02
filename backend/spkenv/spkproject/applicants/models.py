@@ -10,11 +10,13 @@ def generate_userID():
 class Applicant(models.Model):
     """ Stores personal details of loan applicants. """
     userID = models.CharField(max_length=10, unique=True, editable=False, blank=False,default=generate_userID)
-
+    
     # Choice Options
+    
     TITLE_CHOICES = [(1, 'Mr.'), (2, 'Mrs.'), (3, 'Ms.'), (4, 'Dr.')]
     GENDER_CHOICES = [(1, 'Male'), (2, 'Female')]
     MARITAL_STATUS_CHOICES = [(1, 'Single'), (2, 'Married'), (3, 'Divorced'), (4, 'Widowed')]
+    
    
     loan_id = models.IntegerField(null=True, editable=False, unique=True)  # Assigned upon approval
     loanreg_date = models.DateField(auto_now_add=True)
@@ -31,6 +33,7 @@ class Applicant(models.Model):
     state = models.CharField(max_length=40, null=True, blank=True)
     postalCode = models.CharField(max_length=10, null=True, blank=True)
     profile_photo = models.ImageField(upload_to="uploads/images/customer/", null=True, blank=True)
+    is_deleted = models.BooleanField(default=False) # soft delete 
     
     is_approved = models.BooleanField(default=False)  # Loan approval status
 
@@ -64,9 +67,10 @@ class ApplicantProof(models.Model):
         return f"{self.get_proof_type_display()} - {self.applicant.first_name} {self.applicant.last_name}"
 
 class EmploymentDetails(models.Model):
+    EMPLOYMENT_TYPE_CHOICES = [(1,'Agricultural Laborers'),(2,'Private Jobs'),(3,'Daily Wage Laborers'),(4,'Cottage Industry Workers'),(5,'Dairy Workers'),(6,'Rural Shopkeepers'),(7,'Government'),(8,'Transport Operators')]
     """ Employment details of an applicant. """
     applicant = models.ForeignKey(Applicant, related_name='employment', on_delete=models.CASCADE)
-    employmentType = models.CharField(max_length=100, null=True, blank=True)
+    employmentType = models.IntegerField(choices=EMPLOYMENT_TYPE_CHOICES, null=True, blank=True)
     jobTitle = models.CharField(max_length=100, null=True, blank=True)
     yearsWithEmployer = models.IntegerField(null=True, blank=True)
     monthlyIncome = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -105,9 +109,21 @@ class BankingDetails(models.Model):
 class PropertyDetails(models.Model):
     """ Stores details about properties owned by the applicant. """
     PROPERTY_OWNERSHIP_CHOICES = [(1, 'Owned'), (2, 'Mortgaged')]
+    PROPERTY_TYPE_CHOICES = [
+    (1, "Agricultural Land"),
+    (2, "Kutcha House (Mud/Clay)"),
+    (3, "Pucca House (Cement/Brick)"),
+    (4, "Farm House"),
+    (5, "Cattle Shed"),
+    (6, "Storage Shed/Granary"),
+    (7, "Residential Plot"),
+    (8, "Village Shop"),
+    (9, "Joint Family House"),
+    (10, "Vacant Land within Village"),
+]
 
     applicant = models.ForeignKey(Applicant, related_name='properties', on_delete=models.CASCADE)
-    propertyType = models.CharField(max_length=100, null=True, blank=True)
+    propertyType = models.IntegerField(choices=PROPERTY_TYPE_CHOICES, null=True, blank=True)
     property_address = models.TextField(null=True, blank=True)
     propertyValue = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     propertyAge = models.IntegerField(null=True, blank=True)  # Allow null instead of default=0

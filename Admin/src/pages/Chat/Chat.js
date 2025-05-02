@@ -16,6 +16,7 @@ import axios from "axios";
 // API URL for applicant data
 const API_URL = `${process.env.REACT_APP_API_BASE_URL}/applicants/applicants/`;
 
+
 // Global Filter Component
 function GlobalFilter({ preGlobalFilteredRows, globalFilter, setGlobalFilter }) {
     const count = preGlobalFilteredRows.length;
@@ -233,23 +234,67 @@ function ApplicantsTable() {
 
     // Handle view applicant details
     const handleViewApplicant = (rowData) => {
-        navigate('/applicant-details', { state: { rowData } });
+        // Navigate using URL parameter instead of state
+        navigate(`/status/${rowData.id}`); 
     };
 
     // Handle edit applicant
-    const handleEditApplicant = (rowData) => {
-        navigate('/applicant-form', { state: { editMode: true, applicantData: rowData } });
+    const handleEditApplicant = (applicantData) => {
+        // Transform the API data to match your form structure
+        const transformedData = {
+            ...applicantData,
+            // Map nested fields if needed
+            employmentType: applicantData.employment?.[0]?.employmentType || '',
+            jobTitle: applicantData.employment?.[0]?.jobTitle || '',
+            yearsWithEmployer: applicantData.employment?.[0]?.yearsWithEmployer || '',
+            monthlyIncome: applicantData.employment?.[0]?.monthlyIncome || '',
+            otherIncome: applicantData.employment?.[0]?.otherIncome || '',
+
+            // Banking details
+            accountHolderName: applicantData.banking_details?.[0]?.accountHolderName || '',
+            accountNumber: applicantData.banking_details?.[0]?.accountNumber || '',
+            bankName: applicantData.banking_details?.[0]?.bankName || '',
+            ifscCode: applicantData.banking_details?.[0]?.ifscCode || '',
+            bankBranch: applicantData.banking_details?.[0]?.bankBranch || '',
+            accountType: applicantData.banking_details?.[0]?.accountType || '',
+
+            // Property details
+            propertyType: applicantData.properties?.[0]?.propertyType || '',
+            property_address: applicantData.properties?.[0]?.property_address || '',
+            propertyValue: applicantData.properties?.[0]?.propertyValue || '',
+            propertyAge: applicantData.properties?.[0]?.propertyAge || '',
+            propertyOwnership: applicantData.properties?.[0]?.propertyOwnership || '',
+
+            // Map field names if they differ between API and form
+            dateOfBirth: applicantData.date_of_birth || '',
+            maritalStatus: applicantData.marital_status || '',
+            postalCode: applicantData.postal_code || ''
+        };
+
+        navigate('/LoanApplicantEdit', {
+            state: {
+                isEdit: true,
+                applicantId: applicantData.id, // For API calls if needed
+                applicantData: transformedData
+            }
+        });
     };
 
     // Handle delete applicant with confirmation
     const handleDeleteApplicant = async (id) => {
         if (window.confirm('Are you sure you want to delete this applicant?')) {
             try {
-                await axios.delete(`${API_URL}${id}/`);
-                fetchApplicantData();
-                alert('Applicant deleted successfully');
+                const response = await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/applicants/delete-applicant/${id}/`);
+
+                if (response.status === 200) {
+                    fetchApplicantData();
+                    alert('Applicant deleted successfully');
+                } else {
+                    alert('Failed to delete applicant. Please try again.');
+                }
             } catch (error) {
-                alert('Failed to delete applicant. Please try again.');
+                console.error('Error deleting applicant:', error);
+                alert('An error occurred while deleting the applicant.');
             }
         }
     };
@@ -290,18 +335,18 @@ function ApplicantsTable() {
                 Header: "Photo",
                 accessor: "profile_photo",
                 Cell: ({ row }) => (
-                    <img 
-                        src={row.original.profile_photo} 
-                        alt="Applicant" 
-                        style={{ width: "50px", height: "40px" }} 
+                    <img
+                        src={row.original.profile_photo}
+                        alt="Applicant"
+                        style={{ width: "50px", height: "40px" }}
                         onError={(e) => {
                             e.target.src = "https://via.placeholder.com/50x40?text=No+Image";
                         }}
                     />
                 ),
             },
-            { 
-                Header: "Name", 
+            {
+                Header: "Name",
                 accessor: "first_name",
                 Cell: ({ row }) => (
                     <span>{row.original.first_name} {row.original.last_name}</span>
@@ -310,8 +355,8 @@ function ApplicantsTable() {
             { Header: "Phone", accessor: "phone" },
             { Header: "Email", accessor: "email" },
             { Header: "Registration Date", accessor: "loanreg_date" },
-            { 
-                Header: "Status", 
+            {
+                Header: "Status",
                 accessor: "is_approved",
                 Cell: ({ row }) => (
                     <span className={`badge ${row.original.is_approved ? 'bg-success' : 'bg-warning'}`}>
@@ -324,19 +369,21 @@ function ApplicantsTable() {
                 accessor: "action",
                 Cell: ({ row }) => (
                     <div>
-                        <button 
+                        <button
                             className="border-0 text-blue-300 me-2 bg-transparent"
                             onClick={() => handleEditApplicant(row.original)}
+                            title="Edit"
                         >
                             <FeatherIcon icon="edit" />
                         </button>
                         <button
                             className="border-0 text-success me-2 bg-transparent"
                             onClick={() => handleViewApplicant(row.original)}
+                            title="View applicant status"
                         >
                             <FeatherIcon icon="eye" />
                         </button>
-                        <button 
+                        <button
                             className="border-0 text-danger bg-transparent"
                             onClick={() => handleDeleteApplicant(row.original.id)}
                         >
@@ -351,7 +398,7 @@ function ApplicantsTable() {
 
     // Meta title
     document.title = "Applicant Management | SPK Finance";
-    
+
     return (
         <div className="page-content">
             <Container fluid>
@@ -376,10 +423,10 @@ function ApplicantsTable() {
                                         {error}
                                     </div>
                                 ) : (
-                                    <Table 
-                                        columns={columns} 
-                                        data={tableData} 
-                                        exportPDF={exportPDF} 
+                                    <Table
+                                        columns={columns}
+                                        data={tableData}
+                                        exportPDF={exportPDF}
                                         onEdit={handleEditApplicant}
                                         onDelete={handleDeleteApplicant}
                                         onView={handleViewApplicant}

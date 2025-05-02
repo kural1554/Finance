@@ -1,9 +1,16 @@
-from django.urls import path
-from .views import LoanApplicationListCreateView, LoanApplicationRetrieveUpdateDestroyView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import LoanApplicationViewSet
+
+router = DefaultRouter()
+router.register(r'loan-applications', LoanApplicationViewSet, basename='loan-application')
 
 urlpatterns = [
-    path('loan-applications/', LoanApplicationListCreateView.as_view(), name='loan-application-list-create'),
-    path('loan-applications/<int:pk>/', LoanApplicationRetrieveUpdateDestroyView.as_view(), name='loan-application-detail'),
+    path('', include(router.urls)),
 ]
+
+
+
+
 
 
