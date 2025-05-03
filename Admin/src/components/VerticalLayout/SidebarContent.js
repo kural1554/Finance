@@ -159,6 +159,14 @@ const SidebarContent = props => {
               </Link>
             </li>
             <li>
+              <Link to="/outstanding" className="">
+                <FeatherIcon
+                  icon="clock"
+                />{" "}
+                <span>{props.t("Outstanding")}</span>
+              </Link>
+            </li>
+            <li>
             <Link to="/loanpayment" className="">
             <i className="bx bx-money"></i>{" "}
                 <span>{props.t("Loan Payment")}</span>

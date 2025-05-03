@@ -234,9 +234,8 @@ function ApplicantsTable() {
 
     // Handle view applicant details
     const handleViewApplicant = (rowData) => {
-        // Navigate using URL parameter instead of state
-        navigate(`/status/${rowData.id}`); 
-    };
+        navigate(`/status/${rowData.id}`); // ✅ navigates to: /status/5
+      };
 
     // Handle edit applicant
     const handleEditApplicant = (applicantData) => {

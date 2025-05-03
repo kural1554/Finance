@@ -1,6 +1,5 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-
 //Dashboard
 import Dashboard from "../pages/Dashboard/index";
 //Loan Payment
@@ -14,7 +13,7 @@ import UserForm from "../pages/UserForm/UserForm";
 //Chat
 import Chat from "../pages/Chat/Chat";
 import Status from "../pages/Chat/status";
-
+import LoanApplicationView from "../pages/Chat/status";
 //Calculator
 import EmiCalculater from "../pages/Calculator/EmiCalculater";
 
@@ -129,10 +128,10 @@ const userRoutes = [
 { path: "/LoanApplicantEdit", component: <LoanApplicantEdit /> },
   //Chat
   { path: "/apps-chat", component: <Chat /> },
-  { path: "/status", component: <Status /> },
+  { path: "/status/:applicantId", component: <LoanApplicationView /> },
   //Calendar
   { path: "/emi-calculator", component: <EmiCalculater /> },
- 
+ //Outstanding
 
   //Contact
   { path: "/contacts-grid", component: <ContactsGrid /> },
