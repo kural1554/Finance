@@ -1,6 +1,6 @@
 @echo off
 cd backend
 call spkenv\Scripts\activate
-cd spkenv\spkproject
+cd spkproject
 python manage.py runserver
 pause
