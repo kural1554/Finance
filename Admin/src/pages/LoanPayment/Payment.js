@@ -102,7 +102,7 @@ const LoanProcess = () => {
         setLoading(true);
         try {
             const response = await axios.post(
-                `${process.env.REACT_APP_API_BASE_URL}/apply-loan/loan-applications/validate/`,
+                `${process.env.REACT_APP_API_BASE_URL}api/apply-loan/loan-applications/validate/`,
                 {
                     first_name: applicantData.first_name.trim(),
                     phone: applicantData.phone.trim()
@@ -148,7 +148,7 @@ const LoanProcess = () => {
             return;
         }
     
-        const API_URL = `${process.env.REACT_APP_API_BASE_URL}/apply-loan/loan-applications/${loanDetails.loanID}/`;
+        const API_URL = `${process.env.REACT_APP_API_BASE_URL}api/apply-loan/loan-applications/${loanDetails.loanID}/`;
     
         try {
             console.log("Sending PATCH to:", API_URL);

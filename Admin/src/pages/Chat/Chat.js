@@ -14,7 +14,7 @@ import { Button } from "reactstrap";
 import axios from "axios";
 
 // API URL for applicant data
-const API_URL = `${process.env.REACT_APP_API_BASE_URL}/applicants/applicants/`;
+const API_URL = `${process.env.REACT_APP_API_BASE_URL}api/applicants/applicants/`;
 
 
 // Global Filter Component
@@ -338,9 +338,7 @@ function ApplicantsTable() {
                         src={row.original.profile_photo}
                         alt="Applicant"
                         style={{ width: "50px", height: "40px" }}
-                        onError={(e) => {
-                            e.target.src = "https://via.placeholder.com/50x40?text=No+Image";
-                        }}
+                       
                     />
                 ),
             },
