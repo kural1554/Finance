@@ -57,7 +57,7 @@ const InvestedOverview = () => {
                             <div className="col-sm align-self-center">
                                 <div className="mt-4 mt-sm-0">
                                     <p className="mb-1">Invested Amount</p>
-                                    <h4>$ 6134.39</h4>
+                                    <h4> ₹ 180000.39</h4>
 
                                     <p className="text-muted mb-4"> + 0.0012.23 ( 0.2 % ) <i className="mdi mdi-arrow-up ms-1 text-success"></i></p>
 
@@ -65,13 +65,13 @@ const InvestedOverview = () => {
                                         <Col xs={6}>
                                             <div>
                                                 <p className="mb-2 text-muted text-uppercase font-size-11">Income</p>
-                                                <h5 className="fw-medium">$ 2632.46</h5>
+                                                <h5 className="fw-medium"> ₹2632.46</h5>
                                             </div>
                                         </Col>
                                         <Col xs={6}>
                                             <div>
                                                 <p className="mb-2 text-muted text-uppercase font-size-11">Expenses</p>
-                                                <h5 className="fw-medium">-$ 924.38</h5>
+                                                <h5 className="fw-medium">- ₹924.38</h5>
                                             </div>
                                         </Col>
                                     </Row>

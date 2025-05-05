@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import PropTypes from "prop-types";
 import { useTable, useFilters, useGlobalFilter, useAsyncDebounce } from "react-table";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import { Card, CardBody, CardHeader, Col, Container, Row, Dropdown, DropdownToggle, DropdownMenu } from "reactstrap";
@@ -10,9 +10,12 @@ import { CopyToClipboard } from "react-copy-to-clipboard";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import FeatherIcon from "feather-icons-react";
-import customer1 from "../../assets/images/customer/cr1.jpg";
-import customer2 from "../../assets/images/customer/cr2.jpg";
 import { Button } from "reactstrap";
+import axios from "axios";
+
+// API URL for applicant data
+const API_URL = `${process.env.REACT_APP_API_BASE_URL}/applicants/applicants/`;
+
 
 // Global Filter Component
 function GlobalFilter({ preGlobalFilteredRows, globalFilter, setGlobalFilter }) {
@@ -38,16 +41,13 @@ function GlobalFilter({ preGlobalFilteredRows, globalFilter, setGlobalFilter }) 
 }
 
 // Table Component
-function Table({ columns, data, exportPDF }) {
+function Table({ columns, data, exportPDF, onEdit, onDelete, onView }) {
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [hiddenColumns, setHiddenColumns] = useState(["loanamount"]); // Track hidden columns
+    const [hiddenColumns, setHiddenColumns] = useState([]);
 
     const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
 
-    const defaultColumn = useMemo(
-        () => ({}), // Remove the Filter property
-        []
-    );
+    const defaultColumn = useMemo(() => ({}), []);
 
     const {
         getTableProps,
@@ -59,33 +59,29 @@ function Table({ columns, data, exportPDF }) {
         preGlobalFilteredRows,
         setGlobalFilter,
         allColumns,
-        setHiddenColumns: setTableHiddenColumns, // Destructure setHiddenColumns from useTable
+        setHiddenColumns: setTableHiddenColumns,
     } = useTable(
         {
             columns,
             data,
             defaultColumn,
             initialState: {
-                hiddenColumns, // Use the hiddenColumns state
+                hiddenColumns,
             },
         },
         useFilters,
         useGlobalFilter
     );
 
-    // Sync hiddenColumns state with the table's hidden columns
     useEffect(() => {
         setTableHiddenColumns(hiddenColumns);
     }, [hiddenColumns, setTableHiddenColumns]);
 
-    // Function to toggle column visibility
     const toggleColumnVisibility = (columnId) => {
         setHiddenColumns((prevHiddenColumns) => {
             if (prevHiddenColumns.includes(columnId)) {
-                // If the column is hidden, show it
                 return prevHiddenColumns.filter((id) => id !== columnId);
             } else {
-                // If the column is visible, hide it
                 return [...prevHiddenColumns, columnId];
             }
         });
@@ -94,14 +90,13 @@ function Table({ columns, data, exportPDF }) {
     return (
         <React.Fragment>
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3">
-                {/* Left Side: Export Buttons */}
                 <div className="d-flex gap-2 mb-2 mb-md-0">
                     <CopyToClipboard text={JSON.stringify(data)}>
                         <button type="button" className="btn btn-secondary">
                             <span>Copy</span>
                         </button>
                     </CopyToClipboard>
-                    <CSVLink data={data} filename="DataTables.csv" className="btn btn-secondary">
+                    <CSVLink data={data} filename="Applicants.csv" className="btn btn-secondary">
                         <span>Excel</span>
                     </CSVLink>
                     <button onClick={() => exportPDF(data)} type="button" className="btn btn-secondary">
@@ -109,41 +104,40 @@ function Table({ columns, data, exportPDF }) {
                     </button>
                 </div>
 
-                {/* Right Side: Search and Column Visibility */}
                 <div className="d-flex gap-2 align-items-center">
                     <GlobalFilter
                         preGlobalFilteredRows={preGlobalFilteredRows}
                         globalFilter={state.globalFilter}
                         setGlobalFilter={setGlobalFilter}
                     />
-                    <Dropdown isOpen={dropdownOpen} toggle={toggleDropdown} >
+                    <Dropdown isOpen={dropdownOpen} toggle={toggleDropdown}>
                         <DropdownToggle caret color="primary">
                             <FeatherIcon icon="filter" />
                         </DropdownToggle>
-                        <DropdownMenu >
+                        <DropdownMenu>
                             {allColumns.map((column) => (
                                 <div key={column.id} className="px-3 py-1">
                                     <label
                                         style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
                                         onClick={(e) => {
-                                            e.stopPropagation(); // Prevent event propagation
-                                            toggleColumnVisibility(column.id); // Toggle column visibility
+                                            e.stopPropagation();
+                                            toggleColumnVisibility(column.id);
                                         }}
                                     >
                                         <input
                                             type="checkbox"
-                                            checked={!hiddenColumns.includes(column.id)} // Manually control the checked state
+                                            checked={!hiddenColumns.includes(column.id)}
                                             onChange={(e) => {
-                                                e.stopPropagation(); // Prevent event propagation
-                                                toggleColumnVisibility(column.id); // Toggle column visibility
+                                                e.stopPropagation();
+                                                toggleColumnVisibility(column.id);
                                             }}
                                             role="checkbox"
-                                            aria-checked={!hiddenColumns.includes(column.id)} // Indicates checked state
-                                            tabIndex="0" // Make it keyboard accessible
+                                            aria-checked={!hiddenColumns.includes(column.id)}
+                                            tabIndex="0"
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter' || e.key === ' ') {
-                                                    e.preventDefault(); // Prevent default action (e.g., scrolling)
-                                                    toggleColumnVisibility(column.id); // Toggle column visibility
+                                                    e.preventDefault();
+                                                    toggleColumnVisibility(column.id);
                                                 }
                                             }}
                                             style={{ marginRight: "8px" }}
@@ -157,7 +151,6 @@ function Table({ columns, data, exportPDF }) {
                 </div>
             </div>
 
-            {/* Table */}
             <div className="table-responsive">
                 <table className="table" {...getTableProps()}>
                     <thead>
@@ -173,7 +166,7 @@ function Table({ columns, data, exportPDF }) {
                     </thead>
                     <tbody {...getTableBodyProps()}>
                         {rows.map((row) => {
-                            prepareRow(row); // Ensure this is called
+                            prepareRow(row);
                             return (
                                 <tr key={row.id} {...row.getRowProps()}>
                                     {row.cells.map((cell) => (
@@ -190,13 +183,120 @@ function Table({ columns, data, exportPDF }) {
 }
 
 // Main Component
-function DatatableTables() {
-    const navigate = useNavigate(); // Initialize useNavigate
+function ApplicantsTable() {
+    const navigate = useNavigate();
     const [tableData, setTableData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Fetch applicant data from API
+    const fetchApplicantData = async () => {
+        setIsLoading(true);
+        try {
+            const response = await axios.get(API_URL);
+            setTableData(response.data || []); // Assuming API returns array of applicants
+            setError(null);
+        } catch (err) {
+            console.error("Error fetching applicant data:", err);
+            setError("Failed to load applicant data. Please try again later.");
+            // Fallback to sample data in case of API failure
+            setTableData([{
+                "id": 1,
+                "employment": [],
+                "properties": [],
+                "userID": "AP875449",
+                "loan_id": null,
+                "loanreg_date": "2025-03-31",
+                "title": 1,
+                "first_name": "palanisamy",
+                "last_name": "pandiyan",
+                "date_of_birth": "2025-03-10",
+                "gender": 1,
+                "marital_status": 1,
+                "email": "palanisamy@gmail.com",
+                "phone": "7854562321",
+                "address": "thjojo",
+                "city": "trichy",
+                "state": "tamilnadu",
+                "postal_code": "621212",
+                "applicant_photo": "http://127.0.0.1:8080/media/uploads/images/customer/aadhar.jpg",
+                "is_approved": false,
+                "loan_count": 0
+            }]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        setTableData(data);
+        fetchApplicantData();
     }, []);
+
+    // Handle view applicant details
+    const handleViewApplicant = (rowData) => {
+        navigate(`/status/${rowData.id}`); // ✅ navigates to: /status/5
+      };
+
+    // Handle edit applicant
+    const handleEditApplicant = (applicantData) => {
+        // Transform the API data to match your form structure
+        const transformedData = {
+            ...applicantData,
+            // Map nested fields if needed
+            employmentType: applicantData.employment?.[0]?.employmentType || '',
+            jobTitle: applicantData.employment?.[0]?.jobTitle || '',
+            yearsWithEmployer: applicantData.employment?.[0]?.yearsWithEmployer || '',
+            monthlyIncome: applicantData.employment?.[0]?.monthlyIncome || '',
+            otherIncome: applicantData.employment?.[0]?.otherIncome || '',
+
+            // Banking details
+            accountHolderName: applicantData.banking_details?.[0]?.accountHolderName || '',
+            accountNumber: applicantData.banking_details?.[0]?.accountNumber || '',
+            bankName: applicantData.banking_details?.[0]?.bankName || '',
+            ifscCode: applicantData.banking_details?.[0]?.ifscCode || '',
+            bankBranch: applicantData.banking_details?.[0]?.bankBranch || '',
+            accountType: applicantData.banking_details?.[0]?.accountType || '',
+
+            // Property details
+            propertyType: applicantData.properties?.[0]?.propertyType || '',
+            property_address: applicantData.properties?.[0]?.property_address || '',
+            propertyValue: applicantData.properties?.[0]?.propertyValue || '',
+            propertyAge: applicantData.properties?.[0]?.propertyAge || '',
+            propertyOwnership: applicantData.properties?.[0]?.propertyOwnership || '',
+
+            // Map field names if they differ between API and form
+            dateOfBirth: applicantData.date_of_birth || '',
+            maritalStatus: applicantData.marital_status || '',
+            postalCode: applicantData.postal_code || ''
+        };
+
+        navigate('/LoanApplicantEdit', {
+            state: {
+                isEdit: true,
+                applicantId: applicantData.id, // For API calls if needed
+                applicantData: transformedData
+            }
+        });
+    };
+
+    // Handle delete applicant with confirmation
+    const handleDeleteApplicant = async (id) => {
+        if (window.confirm('Are you sure you want to delete this applicant?')) {
+            try {
+                const response = await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/applicants/delete-applicant/${id}/`);
+
+                if (response.status === 200) {
+                    fetchApplicantData();
+                    alert('Applicant deleted successfully');
+                } else {
+                    alert('Failed to delete applicant. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error deleting applicant:', error);
+                alert('An error occurred while deleting the applicant.');
+            }
+        }
+    };
 
     // Function to export data as PDF
     const exportPDF = (data) => {
@@ -207,57 +307,85 @@ function DatatableTables() {
         const doc = new jsPDF(orientation, unit, size);
 
         doc.setFontSize(15);
-        const title = "SPK | All Loan Detials";
-        const headers = [["ID", "Loan ID", "Customer Name", "Phone No", "Balance Amount", "Action"]];
-        const Dataa = data.map((elt) => [
-            elt.id,
-            elt.loanid,
-            elt.customername,
-            elt.phoneno,
-            elt.balanceamount,
-            
+        const title = "Applicant Details";
+        const headers = [["ID", "Name", "Phone", "Email", "Status"]];
+        const pdfData = data.map((elt) => [
+            elt.userID,
+            `${elt.first_name} ${elt.last_name}`,
+            elt.phone,
+            elt.email,
+            elt.is_approved ? "Approved" : "Pending"
         ]);
 
         doc.text(title, marginLeft, 40);
         doc.autoTable({
             startY: 50,
             head: headers,
-            body: Dataa,
+            body: pdfData,
         });
 
-        doc.save("DataTables.pdf");
+        doc.save("Applicants.pdf");
     };
 
     const columns = React.useMemo(
         () => [
-            { Header: "ID", accessor: "id" },
-            { Header: "Loan ID", accessor: "loanid" },
+            { Header: "ID", accessor: "userID" },
             {
-                Header: "Customer Photo",
-                accessor: "customerphoto",
+                Header: "Photo",
+                accessor: "profile_photo",
                 Cell: ({ row }) => (
-                    <img src={row.original.customerphoto} alt="Customer" style={{ width: "50px", height: "40px" }} />
+                    <img
+                        src={row.original.profile_photo}
+                        alt="Applicant"
+                        style={{ width: "50px", height: "40px" }}
+                        onError={(e) => {
+                            e.target.src = "https://via.placeholder.com/50x40?text=No+Image";
+                        }}
+                    />
                 ),
             },
-            { Header: "Customer Name", accessor: "customername" },
-            { Header: "Phone No", accessor: "phoneno" },
-            { Header: "Loan Amount", accessor: "loanamount" },
-            { Header: "Balance Amount", accessor: "balanceamount" },
+            {
+                Header: "Name",
+                accessor: "first_name",
+                Cell: ({ row }) => (
+                    <span>{row.original.first_name} {row.original.last_name}</span>
+                )
+            },
+            { Header: "Phone", accessor: "phone" },
+            { Header: "Email", accessor: "email" },
+            { Header: "Registration Date", accessor: "loanreg_date" },
+            {
+                Header: "Status",
+                accessor: "is_approved",
+                Cell: ({ row }) => (
+                    <span className={`badge ${row.original.is_approved ? 'bg-success' : 'bg-warning'}`}>
+                        {row.original.is_approved ? "Approved" : "Pending"}
+                    </span>
+                )
+            },
             {
                 Header: "Action",
                 accessor: "action",
                 Cell: ({ row }) => (
                     <div>
-                        <button className="border-0 text-blue-300 me-2 bg-transparent">
+                        <button
+                            className="border-0 text-blue-300 me-2 bg-transparent"
+                            onClick={() => handleEditApplicant(row.original)}
+                            title="Edit"
+                        >
                             <FeatherIcon icon="edit" />
                         </button>
                         <button
                             className="border-0 text-success me-2 bg-transparent"
-                            onClick={() => navigate('/status', { state: { rowData: row.original } })}
+                            onClick={() => handleViewApplicant(row.original)}
+                            title="View applicant status"
                         >
                             <FeatherIcon icon="eye" />
                         </button>
-                        <button className="border-0 text-danger bg-transparent">
+                        <button
+                            className="border-0 text-danger bg-transparent"
+                            onClick={() => handleDeleteApplicant(row.original.id)}
+                        >
                             <FeatherIcon icon="trash-2" />
                         </button>
                     </div>
@@ -267,27 +395,42 @@ function DatatableTables() {
         [navigate]
     );
 
-    const data = [
-        { id: 1, loanid: 10, customerphoto: customer1, customername: "ramar", phoneno: 987654321, loanamount: 40000, balanceamount: 15000 },
-        { id: 2, loanid: 22, customerphoto: customer2, customername: "kumar", phoneno: 984654351, loanamount: 50000, balanceamount: 10000 },
-    ];
-
     // Meta title
-    document.title = "Loan Management | SPK Finance";
+    document.title = "Applicant Management | SPK Finance";
+
     return (
         <div className="page-content">
             <Container fluid>
-               
                 <Row>
                     <Col className="col-12">
                         <Card>
-                        <CardHeader className="d-flex justify-content-between align-items-center">
-                                <h4 className="mb-0">Loan Management</h4>
-                                <Button color="primary" onClick={() => navigate('/new-loan')}>
-                                <FeatherIcon icon="plus-circle" className="me-2" />New Loan</Button>
+                            <CardHeader className="d-flex justify-content-between align-items-center">
+                                <h4 className="mb-0">Applicant Management</h4>
+                                <Button color="primary" onClick={() => navigate('/loanform')}>
+                                    <FeatherIcon icon="plus-circle" className="me-2" />New Applicant
+                                </Button>
                             </CardHeader>
                             <CardBody>
-                                <Table columns={columns} data={data} exportPDF={exportPDF} />
+                                {isLoading ? (
+                                    <div className="text-center p-4">
+                                        <div className="spinner-border text-primary" role="status">
+                                            <span className="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                ) : error ? (
+                                    <div className="alert alert-danger" role="alert">
+                                        {error}
+                                    </div>
+                                ) : (
+                                    <Table
+                                        columns={columns}
+                                        data={tableData}
+                                        exportPDF={exportPDF}
+                                        onEdit={handleEditApplicant}
+                                        onDelete={handleDeleteApplicant}
+                                        onView={handleViewApplicant}
+                                    />
+                                )}
                             </CardBody>
                         </Card>
                     </Col>
@@ -297,8 +440,8 @@ function DatatableTables() {
     );
 }
 
-DatatableTables.propTypes = {
+ApplicantsTable.propTypes = {
     preGlobalFilteredRows: PropTypes.array,
 };
 
-export default DatatableTables;
+export default ApplicantsTable;

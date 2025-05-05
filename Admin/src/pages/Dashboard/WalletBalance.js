@@ -68,18 +68,18 @@ const WalletBalance = () => {
                             <div className="col-sm align-self-center">
                                 <div className="mt-4 mt-sm-0">
                                     <div>
-                                        <p className="mb-2"><i className="mdi mdi-circle align-middle font-size-10 me-2 text-success"></i> Bitcoin</p>
-                                        <h6>0.4412 BTC = <span className="text-muted font-size-14 fw-normal">$ 4025.32</span></h6>
+                                        <p className="mb-2"><i className="mdi mdi-circle align-middle font-size-10 me-2 text-success"></i> Today investment</p>
+                                        <h6> ₹ 400000</h6>
                                     </div>
 
                                     <div className="mt-4 pt-2">
-                                        <p className="mb-2"><i className="mdi mdi-circle align-middle font-size-10 me-2 text-primary"></i> Ethereum</p>
-                                        <h6>4.5701 ETH = <span className="text-muted font-size-14 fw-normal">$ 1123.64</span></h6>
+                                        <p className="mb-2"><i className="mdi mdi-circle align-middle font-size-10 me-2 text-primary"></i> Today Expenses</p>
+                                        <h6> ₹ 80000</h6>
                                     </div>
 
                                     <div className="mt-4 pt-2">
-                                        <p className="mb-2"><i className="mdi mdi-circle align-middle font-size-10 me-2 text-info"></i> Litecoin</p>
-                                        <h6>35.3811 LTC = <span className="text-muted font-size-14 fw-normal">$ 2263.09</span></h6>
+                                        <p className="mb-2"><i className="mdi mdi-circle align-middle font-size-10 me-2 text-info"></i> Today Collection</p>
+                                        <h6> ₹ 402532</h6>
                                     </div>
                                 </div>
                             </div>

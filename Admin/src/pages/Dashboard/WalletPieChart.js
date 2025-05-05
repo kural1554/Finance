@@ -3,14 +3,14 @@ import ReactApexChart from "react-apexcharts"
 
 const PieChart = ({ WallentBalanceData }) => {
     const piechartColors = ["#777aca", "#5156be", "#a8aada"]
-    // const series = [35, 70, 15]
+    //const series = [35, 70, 15]
     const options = {
         chart: {
             width: 227,
             height: 227,
             type: 'pie',
         },
-        labels: ['Ethereum', 'Bitcoin', 'Litecoin'],
+        labels: ['Today Collection', 'Today investment', 'Today Expenses'],
         colors: piechartColors,
         stroke: {
             width: 0,

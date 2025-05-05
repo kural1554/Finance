@@ -1,6 +1,5 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-
 //Dashboard
 import Dashboard from "../pages/Dashboard/index";
 //Loan Payment
@@ -9,20 +8,21 @@ import LoanPayment from "../pages/LoanPayment/Payment";
 import Cashflow from "../pages/Cashflow/Cashflow";
 // Calendar
 import Calendar from "../pages/Calendar/index";
-
+//UserForm
+import UserForm from "../pages/UserForm/UserForm";
 //Chat
 import Chat from "../pages/Chat/Chat";
 import Status from "../pages/Chat/status";
-
-
-
+import LoanApplicationView from "../pages/Chat/status";
+//Calculator
+import EmiCalculater from "../pages/Calculator/EmiCalculater";
 
 //Contact
 import ContactsGrid from "../pages/Contacts/contacts-grid";
 import ContactsList from "../pages/Contacts/ContactList/contacts-list";
 import ContactsProfile from "../pages/Contacts/ContactsProfile/contacts-profile";
-
-
+//LoanRequest
+import LoanRequest from "../pages/LoanRequest/LoanRequest";
 
 //Utility
 import PagesStarter from "../pages/Utility/StarterPage";
@@ -67,16 +67,24 @@ import AdvancedPlugins from "../pages/Forms/AdvancedPlugins";
 import FormEditors from "../pages/Forms/FormEditors";
 import FormUpload from "../pages/Forms/FormUpload";
 import FormWizard from "../pages/Forms/FormWizard";
+import Loanform from "../pages/Forms/FormWizard/loanform";
 import FormMask from "../pages/Forms/FormMask";
-
+import EmployeeRegForm from "../pages/Forms/EmployeeForm/EmployeeRegForm"
+import EmployeeListPage from "../pages/Forms/EmployeeForm/EmployeeListPage"
+import EmployeeEdit from "../pages/Forms/EmployeeForm/EmployeeEdit"
 
 
 //Charts
 import Apexchart from "../pages/Charts/Apexcharts";
 import EChart from "../pages/Charts/EChart";
 import ChartjsChart from "../pages/Charts/ChartjsChart";
+//LoanProcess
+import LoanProcess from "../pages/LoanProcess/LoanProcess";
+//ApprovalStatus
+import ApprovalStatus from "../pages/ApprovalStatus/ApprovalStatus";
+//LoanApplicantEdit
 
-
+import LoanApplicantEdit from "../pages/Chat/LoanApplicantEdit";
 
 // Maps
 import MapsGoogle from "../pages/Maps/MapsGoogle";
@@ -100,6 +108,7 @@ import TwoStepVerfication from "../pages/AuthenticationInner/TwoStepVerfication"
 import AuthLogout from "../pages/AuthenticationInner/Logout";
 import UserProfile from "../pages/Authentication/user-profile";
 import RangeSlider from "../pages/Extended/RangeSlider/Index";
+import { components } from "react-select";
 
 const userRoutes = [
   //dashboard
@@ -114,19 +123,25 @@ const userRoutes = [
 
   //Calendar
   { path: "/apps-calendar", component: <Calendar /> },
+//LoanAppicantEdit 
 
-
+{ path: "/LoanApplicantEdit", component: <LoanApplicantEdit /> },
   //Chat
   { path: "/apps-chat", component: <Chat /> },
-  { path: "/status", component: <Status /> },
-
- 
+  { path: "/status/:applicantId", component: <LoanApplicationView /> },
+  //Calendar
+  { path: "/emi-calculator", component: <EmiCalculater /> },
+ //Outstanding
 
   //Contact
   { path: "/contacts-grid", component: <ContactsGrid /> },
   { path: "/contacts-list", component: <ContactsList /> },
   { path: "/contacts-profile", component: <ContactsProfile /> },
+//ApprovalStatus
+{path:"/approval-status",component:<ApprovalStatus/>},
 
+//LoanProcess
+{path:"/loan-process",component:<LoanProcess/>},
  
 
   //Utility
@@ -167,10 +182,19 @@ const userRoutes = [
   { path: "/form-validation", component: <FormValidation /> },
   { path: "/form-advanced", component: <AdvancedPlugins /> },
   { path: "/form-uploads", component: <FormUpload /> },
-  { path: "/form-wizard", component: <FormWizard /> },
+  { path: "/loanform", component: <Loanform/> },
+  { path: "/employeeregform", component: <EmployeeRegForm/> },
+  { path: "/employeelistpage", component: <EmployeeListPage/> },
+  {path:"/employeeedit/:employeeID", component: <EmployeeEdit/>},
+
+  
+  // { path: "/form-wizard", component: <FormWizard /> },
   { path: "/form-mask", component: <FormMask /> },
 
-
+// LoanRequest
+{ path: "/LoanRequest", component: <LoanRequest /> },
+//UserForm
+{ path: "/UserForm", component: <UserForm /> },
 
   //Charts
   { path: "/charts-apex", component: <Apexchart /> },

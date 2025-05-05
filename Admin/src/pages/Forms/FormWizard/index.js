@@ -3,7 +3,7 @@ import { Container } from "reactstrap"
 
 //Import Breadcrumb
 import Breadcrumbs from "../../../components/Common/Breadcrumb"
-import BasicPills from './BasicPills';
+import LoanApplicationForm from './LoanApplicationForm';
 import ProgressbarWizard from './ProgressbarWizard';
 
 const FormWizard = () => {
@@ -18,8 +18,8 @@ const FormWizard = () => {
 
                     <div className="row">
                         <div className="col-lg-12">
-                            <BasicPills />
-                            <ProgressbarWizard />
+                            <LoanApplicationForm />
+                            {/* <ProgressbarWizard /> */}
                         </div>
                     </div>
 
