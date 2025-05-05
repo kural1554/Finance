@@ -34,7 +34,7 @@ const LoanApplicationView = () => {
         const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   
         // Fetch applicant data
-        const applicantResponse = await fetch(`${API_BASE_URL}/applicants/applicants/${applicantId}/`);
+        const applicantResponse = await fetch(`${API_BASE_URL}api/applicants/applicants/${applicantId}/`);
         if (!applicantResponse.ok) throw new Error("Failed to fetch applicant data");
         const applicantJson = await applicantResponse.json();
   

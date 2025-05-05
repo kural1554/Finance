@@ -185,7 +185,7 @@ const LoanProcess = () => {
     setLoading(true);
 
     const BASE_URL = process.env.REACT_APP_API_BASE_URL;
-    const VALIDATION_URL = `${BASE_URL}/applicants/validate-applicant/`;
+    const VALIDATION_URL = `${BASE_URL}api/applicants/validate-applicant/`;
 
     try {
       const response = await axios.post(VALIDATION_URL, applicantData);
@@ -283,7 +283,7 @@ const LoanProcess = () => {
     });
   
     // API URL for submission
-    const API_URL = `${process.env.REACT_APP_API_BASE_URL}/apply-loan/loan-applications/`;
+    const API_URL = `${process.env.REACT_APP_API_BASE_URL}api/apply-loan/loan-applications/`;
   
     try {
       // Submit the form with multipart/form-data headers for file uploads

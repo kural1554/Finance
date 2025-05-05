@@ -42,7 +42,8 @@ function LoanRequest() {
   const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
 
-  const API_URL = `${process.env.REACT_APP_API_BASE_URL}/loanrequest/`;
+  const API_URL = `${process.env.REACT_APP_API_BASE_URL}api/loanrequest/`;
+console.log(API_URL);
 
   // Fetch loan requests from API
   useEffect(() => {

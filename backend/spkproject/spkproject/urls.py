@@ -9,7 +9,7 @@ urlpatterns = [
   
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')), 
-    re_path(r"^.*$", views.index, name="index"),
+    re_path(r'^(?!media/|static/|api/).*$', views.index, name='index'),
     # path('api/', include('finance_app.urls')),
     
 ]

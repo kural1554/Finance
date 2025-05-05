@@ -59,7 +59,7 @@ const EmployeeRegForm = () => {
     }
 
     try {
-      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/employees/`, formDataObj, {
+      await axios.post(`${process.env.REACT_APP_API_BASE_URL}api/employees/`, formDataObj, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

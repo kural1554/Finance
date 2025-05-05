@@ -167,7 +167,7 @@ function Table({ columns, data, exportPDF }) {
 
 // Main Component
 function EmployeeListPage() {
-    const API_URL = `${process.env.REACT_APP_API_BASE_URL}/employees/`;
+    const API_URL = `${process.env.REACT_APP_API_BASE_URL}api/employees/`;
     const navigate = useNavigate();
     const [tableData, setTableData] = useState([]);
 

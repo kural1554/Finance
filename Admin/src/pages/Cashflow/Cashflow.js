@@ -18,7 +18,7 @@ function Cashflow() {
 
     // API base URL from .env
     const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ;
-    const cashflowURL = `${API_BASE_URL}/cashflow/`;
+    const cashflowURL = `${API_BASE_URL}api/cashflow/`;
 
     useEffect(() => {
         const fetchCashflows = async () => {

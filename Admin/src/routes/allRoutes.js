@@ -110,6 +110,7 @@ import UserProfile from "../pages/Authentication/user-profile";
 import RangeSlider from "../pages/Extended/RangeSlider/Index";
 import { components } from "react-select";
 
+import OutStanding from "../pages/Outstanding/OutStanding"
 const userRoutes = [
   //dashboard
   { path: "/dashboard", component: <Dashboard /> },
@@ -132,7 +133,7 @@ const userRoutes = [
   //Calendar
   { path: "/emi-calculator", component: <EmiCalculater /> },
  //Outstanding
-
+  { path: "/outstanding", component: <OutStanding /> },
   //Contact
   { path: "/contacts-grid", component: <ContactsGrid /> },
   { path: "/contacts-list", component: <ContactsList /> },
