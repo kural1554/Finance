@@ -14,14 +14,14 @@ const ApprovalStatus = () => {
 
     const fetchApplicants = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/api/applicants/applicants/');
-            setApplicants(response.data);
-            setLoading(false);
+          const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/applicants/applicants/`);
+          setApplicants(response.data);
+          setLoading(false);
         } catch (error) {
-            console.error('Error fetching applicants:', error);
-            setLoading(false);
+          console.error('Error fetching applicants:', error);
+          setLoading(false);
         }
-    };
+      };
 
     const getStatusIcon = (status) => {
         switch (status) {

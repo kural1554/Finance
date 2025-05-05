@@ -30,12 +30,14 @@ const LoanApplicationView = () => {
       try {
         setLoading(true);
         setError(null);
-
+  
+        const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  
         // Fetch applicant data
-        const applicantResponse = await fetch(`http://127.0.0.1:8000/api/applicants/applicants/${applicantId}/`);
+        const applicantResponse = await fetch(`${API_BASE_URL}/applicants/applicants/${applicantId}/`);
         if (!applicantResponse.ok) throw new Error("Failed to fetch applicant data");
         const applicantJson = await applicantResponse.json();
-
+  
         // Ensure arrays are initialized
         setApplicantData({
           ...applicantJson,
@@ -44,23 +46,21 @@ const LoanApplicationView = () => {
           banking_details: applicantJson.banking_details || [],
           proofs: applicantJson.proofs || []
         });
-
+  
         // Fetch loan data
-        const loanResponse = await fetch('http://127.0.0.1:8000/api/apply-loan/loan-applications/');
+        const loanResponse = await fetch(`${API_BASE_URL}/apply-loan/loan-applications/`);
         if (!loanResponse.ok) throw new Error("Failed to fetch loan data");
         const loanJson = await loanResponse.json();
-
+  
         // Match loans by phone number
-        const applicantLoans = loanJson.filter(
-          loan => loan.phone === applicantJson.phone
-        )[0] || {}; // Get first match or empty object
-
+        const applicantLoans = loanJson.find(loan => loan.phone === applicantJson.phone) || {};
+  
         setLoanData({
           ...applicantLoans,
           nominees: applicantLoans.nominees || [],
           emiSchedule: applicantLoans.emiSchedule || []
         });
-
+  
       } catch (err) {
         console.error("Error fetching data:", err);
         setError(err.message);
@@ -68,7 +68,7 @@ const LoanApplicationView = () => {
         setLoading(false);
       }
     };
-
+  
     if (applicantId) {
       fetchData();
     }
