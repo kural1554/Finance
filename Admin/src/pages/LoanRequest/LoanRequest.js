@@ -384,13 +384,19 @@ console.log(API_URL);
                         <td>{item.date}</td>
                         <td>
                           <div className="d-flex gap-3">
-                            <Button color="warning" size="sm" onClick={() => handleEdit(item)}>
+                            <Button 
+                            className="border-0 text-warning me-2 bg-transparent"
+                             size="sm" onClick={() => handleEdit(item)}>
                               <FeatherIcon icon="edit" />
                             </Button>
-                            <Button color="danger" size="sm" onClick={() => handleDelete(item.id)}>
+                            <Button 
+                            className="border-0 text-danger me-2 bg-transparent"
+                            size="sm" onClick={() => handleDelete(item.id)}>
                               <FeatherIcon icon="trash-2" />
                             </Button>
-                            <Button color="success" size="sm" onClick={() => handleChatRedirect(item)}>
+                            <Button 
+                            className="border-0 text-success me-2 bg-transparent"
+                            size="sm" onClick={() => handleChatRedirect(item)}>
                               <FeatherIcon icon="zap" />
                             </Button>
                           </div>

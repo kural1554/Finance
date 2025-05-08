@@ -232,6 +232,25 @@ const LoanApplicationForm = () => {
     try {
       setIsSubmitting(true);
 
+
+      // Prepare the plain JSON object (not FormData)
+      const editData = {
+        ...formData,
+        employment: formData.employment,
+        banking_details: formData.banking_details,
+        properties: formData.properties,
+        proofs: applicantDocuments.map(doc => ({
+          id: doc.id,
+          type: doc.type,
+          idNumber: doc.idNumber,
+          file:doc.file,
+          // Don't include file here, as it's a File object
+        }))
+      };
+
+      console.log("Edit data (JSON):", JSON.stringify(editData, null, 2));
+
+
       // Create FormData object
       const formDataToSend = new FormData();
 
@@ -312,6 +331,7 @@ const LoanApplicationForm = () => {
       if (applicantDocuments.length > 0) {
         applicantDocuments.forEach((doc, index) => {
           const prefix = `proofs[${index}]`;
+
           if (doc.id) { // Send ID if updating an existing proof
             formDataToSend.append(`${prefix}[id]`, doc.id);
           }
@@ -320,8 +340,11 @@ const LoanApplicationForm = () => {
           if (doc.idNumber !== null && doc.idNumber !== undefined) formDataToSend.append(`${prefix}[idNumber]`, doc.idNumber);
           
           // Only append file if it's a new File object (i.e., user selected a new file for this proof)
+
           if (doc.file instanceof File) {
             formDataToSend.append(`${prefix}[file]`, doc.file);
+          } else if (typeof doc.file === "string" && doc.file) {
+            formDataToSend.append(`${prefix}[file_url]`, doc.file);
           }
           // If doc.file is a URL string (existing file not changed), DO NOT append it.
           // The backend should retain the existing file if no new file is sent for an existing proof ID.

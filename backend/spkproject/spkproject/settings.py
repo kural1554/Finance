@@ -189,17 +189,29 @@ WSGI_APPLICATION = 'spkproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'updatefin',
-        'USER': 'postgres',
-        'PASSWORD': 'bharath',  # replace with the actual password
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': 'defaultdb',
+        'USER': 'avnadmin',
+        'PASSWORD': 'AVNS_x9yEdSDgXmR7pqRnYgW',  # replace with the actual password
+        'HOST': 'pg-5a6777f-santhosh20cs045k-744e.d.aivencloud.com',
+        'PORT': '25870',
         'OPTIONS': {
             'sslmode': 'disable',
         },
     }
 }
-
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'spkfinancedatabase',
+#         'USER': 'postgres',
+#         'PASSWORD': 'spk',  # replace with the actual password
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#         'OPTIONS': {
+#             'sslmode': 'disable',
+#         },
+#     }
+# }
 
 
 # Password validation

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Container, Row, Col, Card, CardBody, CardHeader } from "reactstrap";
-import { useParams, useNavigate } from "react-router-dom"; 
+import { useParams, useNavigate } from "react-router-dom";
 
 const EmployeeEdit = () => {
   const { employeeID } = useParams(); // Get employee ID from URL
@@ -24,39 +24,50 @@ const EmployeeEdit = () => {
 
   // Fetch Employee Data
   useEffect(() => {
-    if (!employeeID) {
-      console.error("Invalid Employee ID");
-      return;
-    }
-
     const fetchEmployeeData = async () => {
       try {
-        console.log(`Fetching data from: http://127.0.0.1:8080/api/employees/${employeeID}/`);
-        const response = await axios.get(`http://127.0.0.1:8080/api/employees/${employeeID}/`);
-        const data = response.data;
-
-        setFormData({
-          title: data.title?.toString() || "",
-          emp_type: data.emp_type?.toString() || "",
-          empfirst_name: data.empfirst_name || "",
-          empfather_name: data.empfather_name || "",
-          gender: data.gender?.toString() || "",
-          address: data.address || "",
-          email: data.email || "",
-          phone: data.phone || "",
-          date_of_birth: data.date_of_birth || "",
-          employee_photo: null, // File uploads are handled separately
-        });
-
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}api/employees/${employeeID}/`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        
+        if (response.status === 200) {
+          const data = response.data;
+          setFormData({
+            title: data.title?.toString() || "",
+            emp_type: data.emp_type?.toString() || "",
+            empfirst_name: data.empfirst_name || "",
+            empfather_name: data.empfather_name || "",
+            gender: data.gender?.toString() || "",
+            address: data.address || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            date_of_birth: data.date_of_birth || "",
+            employee_photo: null,
+          });
+        }
       } catch (error) {
-        console.error("Error fetching employee data:", error);
-        alert("Failed to load employee data.");
+        console.error("Detailed error:", {
+          message: error.message,
+          response: error.response,
+          request: error.request,
+        });
+        alert(`Error: ${error.response?.statusText || error.message}`);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchEmployeeData();
+  
+    if (employeeID) {
+      fetchEmployeeData();
+    } else {
+      console.error("Employee ID is missing");
+      setLoading(false);
+    }
   }, [employeeID]);
 
   // Handle input changes
@@ -91,7 +102,8 @@ const EmployeeEdit = () => {
     }
 
     try {
-      await axios.put(`http://127.0.0.1:8080/api/employees/${employeeID}/`, formDataObj, {
+      // Use the correct API endpoint
+      await axios.put(`${process.env.REACT_APP_API_BASE_URL}api/employees/${employeeID}/`, formDataObj, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

@@ -281,6 +281,7 @@ function ApplicantsTable() {
     };
 
     // Handle delete applicant with confirmation
+
         // Handle delete applicant with confirmation
         const handleDeleteApplicant = async (id) => {
             
@@ -310,6 +311,7 @@ function ApplicantsTable() {
                     // Display error from backend if available, otherwise generic message
                     const errorMsg = error.response?.data?.message || error.response?.data?.detail || 'An error occurred while deleting.';
                     toast.error(`Delete failed: ${errorMsg}`);
+
                 }
             }
         };
