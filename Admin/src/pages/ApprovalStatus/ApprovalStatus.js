@@ -14,7 +14,7 @@ const ApprovalStatus = () => {
 
     const fetchApplicants = async () => {
         try {
-          const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/applicants/applicants/`);
+          const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}api/applicants/applicants/`);
           setApplicants(response.data);
           setLoading(false);
         } catch (error) {

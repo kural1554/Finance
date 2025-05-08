@@ -96,15 +96,27 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'defaultdb',
         'USER': 'avnadmin',
-        'PASSWORD': 'AVNS_aVTUKlPYdfn5jJ1vbWx',  # replace with the actual password
-        'HOST': 'pg-300d76ba-santhosh20cs045k-744e.l.aivencloud.com',
+        'PASSWORD': 'AVNS_x9yEdSDgXmR7pqRnYgW',  # replace with the actual password
+        'HOST': 'pg-5a6777f-santhosh20cs045k-744e.d.aivencloud.com',
         'PORT': '25870',
         'OPTIONS': {
             'sslmode': 'require',
         },
     }
 }
-
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'spkfinancedatabase',
+#         'USER': 'postgres',
+#         'PASSWORD': 'spk',  # replace with the actual password
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#         'OPTIONS': {
+#             'sslmode': 'disable',
+#         },
+#     }
+# }
 
 
 # Password validation

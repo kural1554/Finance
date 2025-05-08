@@ -283,7 +283,7 @@ function ApplicantsTable() {
     const handleDeleteApplicant = async (id) => {
         if (window.confirm('Are you sure you want to delete this applicant?')) {
             try {
-                const response = await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/applicants/delete-applicant/${id}/`);
+                const response = await axios.delete(`${process.env.REACT_APP_API_BASE_URL}api/applicants/delete-applicant/${id}/`);
 
                 if (response.status === 200) {
                     fetchApplicantData();

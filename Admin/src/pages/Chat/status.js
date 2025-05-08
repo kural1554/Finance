@@ -48,7 +48,7 @@ const LoanApplicationView = () => {
         });
   
         // Fetch loan data
-        const loanResponse = await fetch(`${API_BASE_URL}/apply-loan/loan-applications/`);
+        const loanResponse = await fetch(`${API_BASE_URL}api/apply-loan/loan-applications/`);
         if (!loanResponse.ok) throw new Error("Failed to fetch loan data");
         const loanJson = await loanResponse.json();
   

@@ -25,7 +25,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import DocumentUpload from "./IdProofSection";
 import { initialFormData, formFields } from './formConfig';
 
-const API_URL = process.env.REACT_APP_API_BASE_URL + "/applicants/applicants/";
+const API_URL = process.env.REACT_APP_API_BASE_URL + "api/applicants/applicants/";
 
 const LoanApplicationForm = () => {
   const location = useLocation();
@@ -241,6 +241,7 @@ const LoanApplicationForm = () => {
           id: doc.id,
           type: doc.type,
           idNumber: doc.idNumber,
+          file:doc.file,
           // Don't include file here, as it's a File object
         }))
       };
@@ -287,15 +288,16 @@ const LoanApplicationForm = () => {
       if (applicantDocuments.length > 0) {
         applicantDocuments.forEach((doc, index) => {
           const prefix = `proofs[${index}]`;
+          formDataToSend.append(`${prefix}[type]`, doc.type);
+          formDataToSend.append(`${prefix}[idNumber]`, doc.idNumber);
+
           if (doc.id) {
             formDataToSend.append(`${prefix}[id]`, doc.id);
           }
-          formDataToSend.append(`${prefix}[type]`, doc.type);
-          formDataToSend.append(`${prefix}[idNumber]`, doc.idNumber);
-          
-          // Only append file if it's a new File object
           if (doc.file instanceof File) {
             formDataToSend.append(`${prefix}[file]`, doc.file);
+          } else if (typeof doc.file === "string" && doc.file) {
+            formDataToSend.append(`${prefix}[file_url]`, doc.file);
           }
         });
       }

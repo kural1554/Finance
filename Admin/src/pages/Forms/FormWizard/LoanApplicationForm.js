@@ -157,6 +157,7 @@ const LoanApplicationForm = () => {
   };
 
   // --- Remove transformFormData function - We build FormData directly ---
+// API URL for applicant data
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -245,7 +246,7 @@ const LoanApplicationForm = () => {
     try {
       // --- Send FormData using Axios ---
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/applicants/applicants/",
+        `${process.env.REACT_APP_API_BASE_URL}api/applicants/applicants/`,
         submissionData, // Pass the FormData object directly
         {
           // **IMPORTANT: Do NOT manually set Content-Type header**
