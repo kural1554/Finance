@@ -73,6 +73,11 @@ const LoanProcess = () => {
     { value: "4", label: "Sibling" },
     { value: "5", label: "Other" }
   ];
+  const InterestOptions = [
+    { value: "", label: "Select..." },
+    { value: "1", label: "Diminishing interest rate" },
+    { value: "2", label: "Flat interest rate" },
+  ];
   //emi loan interest 
 
   const [interestRate, setInterestRate] = useState(0);
@@ -234,7 +239,7 @@ const LoanProcess = () => {
     setLoading(true);
     console.log("Nominees:", nominees);
     console.log("RHF Data Received by onFinalSubmit:", data);
-  
+
     // Prepare full JSON payload for submission
     const fullJsonPayload = {
       ...data,
@@ -251,27 +256,27 @@ const LoanProcess = () => {
       })),
       emiSchedule: emiDetails,  // assuming emiDetails is correctly structured
     };
-  
+
     const preview = JSON.stringify(fullJsonPayload, null, 2);
     console.log("🚀 Full JSON Payload Preview:");
     console.log(preview);
-  
+
     // Prepare FormData to send files and data
     const formDataToSubmit = new FormData();
-  
+
     // Add all non-file data to FormData
     for (const key in fullJsonPayload) {
       if (fullJsonPayload[key] && typeof fullJsonPayload[key] !== 'object') {
         formDataToSubmit.append(key, fullJsonPayload[key]);
       }
     }
-  
+
     // Add nominees array as JSON string
     formDataToSubmit.append('nominees', JSON.stringify(fullJsonPayload.nominees));
-  
+
     // Add EMI schedule array as JSON string
     formDataToSubmit.append('emiSchedule', JSON.stringify(fullJsonPayload.emiSchedule));
-  
+
     // Add files (photos, proof files) for each nominee
     nominees.forEach((nominee, index) => {
       if (nominee?.nomineeProfilePhoto instanceof File) {
@@ -281,10 +286,10 @@ const LoanProcess = () => {
         formDataToSubmit.append(`nominee_${index}_id_proof`, nominee.nomineeidProofFile);
       }
     });
-  
+
     // API URL for submission
     const API_URL = `${process.env.REACT_APP_API_BASE_URL}api/apply-loan/loan-applications/`;
-  
+
     try {
       // Submit the form with multipart/form-data headers for file uploads
       const response = await axios.post(API_URL, formDataToSubmit, {
@@ -292,7 +297,7 @@ const LoanProcess = () => {
           'Content-Type': 'multipart/form-data',  // for file uploads
         },
       });
-  
+
       setLoading(false);
       console.log("Submission Response:", response.data);
       toast.success('✅ Loan Application Submitted Successfully!');
@@ -307,7 +312,7 @@ const LoanProcess = () => {
       toast.error(errorMessage);
     }
   };
-  
+
   // --- EMI Calculation ---
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
@@ -353,77 +358,93 @@ const LoanProcess = () => {
   const emiStartDates = calculateEMIStartDates(loanDate);
   console.log(emiStartDates);
   const calculateEMI = () => {
-
-    // Get values directly from RHF state
-    const { amount, term, interestRate, termType, startDate } = getValues();
-
-    if (!amount || !term || !interestRate || !termType || !startDate) {
+    const { amount, term, interestRate, termType, startDate, interestType } = getValues();
+  
+    if (!amount || !term || !interestRate || !termType || !startDate || !interestType) {
       toast.error("Please fill all required loan details!");
       return;
     }
-
+  
     let principal = parseFloat(amount);
-    let rate = parseFloat(interestRate) / 100; // Monthly rate (changed from /12)
-    let termInMonths = 0;
+    let rate = parseFloat(interestRate) / 100; // Convert percentage to decimal (3% → 0.03)
     const termValue = parseInt(term);
-
-    let remainingPrincipal = principal;
     let numberOfMonths = 0;
-
+  
     switch (termType) {
-      case "days": numberOfMonths = Math.ceil(termValue / 30); break; // Approximate
-      case "weeks": numberOfMonths = Math.ceil(termValue); break; // Approximate
+      case "days": numberOfMonths = Math.ceil(termValue / 30); break;
+      case "weeks": numberOfMonths = Math.ceil(termValue / 4); break;
       case "months": numberOfMonths = termValue; break;
       case "years": numberOfMonths = termValue * 12; break;
-      default: numberOfMonths = termValue; // Default to months if type is weird
+      default: numberOfMonths = termValue;
     }
-
+  
     if (numberOfMonths <= 0) {
       toast.error("Invalid loan term.");
       return;
     }
-
-    // Calculate EMI start dates
+  
     const emiStartDates = calculateEMIStartDates(startDate);
-
-    let fixedPrincipalPayment = remainingPrincipal / numberOfMonths;
     let emiBreakdown = [];
-
-    for (let i = 1; i <= numberOfMonths; i++) {
-      // Calculate interest for this month on the current remaining balance
-      let interestForMonth = remainingPrincipal * rate;
-      let emiTotalMonth = interestForMonth + fixedPrincipalPayment;
-
-      // Update remaining principal after payment
-      remainingPrincipal -= fixedPrincipalPayment;
-
-      // Ensure remaining balance doesn't go negative
-      let currentRemainingBalance = Math.max(0, remainingPrincipal);
-
-      emiBreakdown.push({
-        month: i,
-        emiStartDate: emiStartDates[i - 1] || "N/A", // Add the EMI start date
-        emiTotalMonth: parseFloat(emiTotalMonth.toFixed(2)),
-        interest: parseFloat(interestForMonth.toFixed(2)),
-        principalPaid: parseFloat(fixedPrincipalPayment.toFixed(2)),
-        remainingBalance: parseFloat(currentRemainingBalance.toFixed(2))
-      });
-
-      // Stop if principal is paid off
-      if (currentRemainingBalance <= 0.01) {
-        // Adjust final payment if needed
-        if (i === numberOfMonths && currentRemainingBalance < 0) {
-          emiBreakdown[i - 1].principalPaid += currentRemainingBalance;
-          emiBreakdown[i - 1].emiTotalMonth = emiBreakdown[i - 1].interest + emiBreakdown[i - 1].principalPaid;
-          emiBreakdown[i - 1].remainingBalance = 0;
-        }
-        break;
+  
+    if (interestType === "1") {
+      // Diminishing Interest Rate (Original Calculation)
+      let fixedPrincipalPayment = principal / numberOfMonths;
+      let remainingPrincipal = principal;
+  
+      for (let i = 1; i <= numberOfMonths; i++) {
+        let interestForMonth = remainingPrincipal * rate;
+        let emiTotalMonth = interestForMonth + fixedPrincipalPayment;
+        remainingPrincipal -= fixedPrincipalPayment;
+  
+        emiBreakdown.push({
+          month: i,
+          emiStartDate: emiStartDates[i - 1] || "N/A",
+          emiTotalMonth: parseFloat(emiTotalMonth.toFixed(2)),
+          interest: parseFloat(interestForMonth.toFixed(2)),
+          principalPaid: parseFloat(fixedPrincipalPayment.toFixed(2)),
+          remainingBalance: parseFloat(Math.max(0, remainingPrincipal).toFixed(2))
+        });
+  
+        if (remainingPrincipal <= 0.01) break;
+      }
+    } else if (interestType === "2") {
+      // Flat Interest Rate (New Logic)
+      // Step 1: Calculate total interest using diminishing method
+      let totalInterest = 0;
+      let remainingPrincipalForInterest = principal;
+      const fixedPrincipalPayment = principal / numberOfMonths;
+  
+      for (let i = 1; i <= numberOfMonths; i++) {
+        let interestForMonth = remainingPrincipalForInterest * rate;
+        totalInterest += interestForMonth;
+        remainingPrincipalForInterest -= fixedPrincipalPayment;
+      }
+  
+      // Step 2: Add to principal and divide by months
+      const totalRepayment = principal + totalInterest;
+      const fixedEMI = totalRepayment / numberOfMonths;
+      let remainingPrincipal = principal;
+  
+      // Step 3: Generate schedule with equal EMIs
+      for (let i = 1; i <= numberOfMonths; i++) {
+        const principalPaid = principal / numberOfMonths;
+        const interestPaid = fixedEMI - principalPaid;
+        remainingPrincipal -= principalPaid;
+  
+        emiBreakdown.push({
+          month: i,
+          emiStartDate: emiStartDates[i - 1] || "N/A",
+          emiTotalMonth: parseFloat(fixedEMI.toFixed(2)),
+          interest: parseFloat(interestPaid.toFixed(2)),
+          principalPaid: parseFloat(principalPaid.toFixed(2)),
+          remainingBalance: parseFloat(Math.max(0, remainingPrincipal).toFixed(2))
+        });
       }
     }
-
+  
     setEmiDetails(emiBreakdown);
     toast.success("✅ EMI Schedule Calculated");
-    toggleTab(3); // Move to EMI tab after calculation
+    toggleTab(3);
   };
   const sendLoanApplication = async () => {
     try {
@@ -882,30 +903,32 @@ const LoanProcess = () => {
                   </Row>
 
                   <Row>
-                    <Col md={6}>
+                  <Col md={6}>
                       <FormGroup>
-                        <Label htmlFor="term">Loan Term</Label>
+                        <Label htmlFor="interestType">Interest Type</Label>
                         <Controller
-                          name="term"
+                          name="interestType"
                           control={control}
-                          rules={{
-                            required: "Loan term is required",
-                            min: { value: 1, message: "Term must be at least 1" }
-                          }}
+                          rules={{ required: "Interest type is required" }}
                           render={({ field }) => (
                             <Input
                               {...field}
-                              id="term"
-                              type="number"
-                              placeholder="Enter loan term duration"
-                              min="1"
-                              invalid={!!errors.term}
-                            />
+                              id="interestType"
+                              type="select"
+                              invalid={!!errors.interestType}
+                            >
+                              {InterestOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </Input>
                           )}
                         />
-                        {errors.term && <span className="text-danger small">{errors.term.message}</span>}
+                        {errors.interestType && <span className="text-danger small">{errors.interestType.message}</span>}
                       </FormGroup>
                     </Col>
+                    
 
                     <Col md={6}>
                       <FormGroup>
@@ -965,6 +988,33 @@ const LoanProcess = () => {
 
                     <Col md={6}>
                       <FormGroup>
+                        <Label htmlFor="term">Loan Term</Label>
+                        <Controller
+                          name="term"
+                          control={control}
+                          rules={{
+                            required: "Loan term is required",
+                            min: { value: 1, message: "Term must be at least 1" }
+                          }}
+                          render={({ field }) => (
+                            <Input
+                              {...field}
+                              id="term"
+                              type="number"
+                              placeholder="Enter loan term duration"
+                              min="1"
+                              invalid={!!errors.term}
+                            />
+                          )}
+                        />
+                        {errors.term && <span className="text-danger small">{errors.term.message}</span>}
+                      </FormGroup>
+                    </Col>
+                  </Row>
+
+                  <Row>
+                    <Col md={6}>
+                      <FormGroup>
                         <Label htmlFor="purpose">Loan Purpose</Label>
                         <Controller
                           name="purpose"
@@ -988,9 +1038,7 @@ const LoanProcess = () => {
                         {errors.purpose && <span className="text-danger small">{errors.purpose.message}</span>}
                       </FormGroup>
                     </Col>
-                  </Row>
 
-                  <Row>
                     <Col md={6}>
                       <FormGroup>
                         <Label htmlFor="repaymentSource">Source of Repayment</Label>

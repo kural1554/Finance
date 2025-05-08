@@ -16,6 +16,104 @@ from rest_framework.permissions import AllowAny
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'standard_file': {
+            'format': '%(asctime)s %(levelname)-8s [%(name)s:%(lineno)d] %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+        'simple_console': {
+            'format': '{levelname} {asctime} {name}: {message}',
+            'style': '{',
+            'datefmt': '%H:%M:%S'
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple_console',
+        },
+        'application_logfile': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'log', 'application.log'),
+            'maxBytes': 1024 * 1024 * 10,
+            'backupCount': 5,
+            'formatter': 'standard_file',
+        },
+        'error_logfile': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'log', 'errors.log'),
+            'maxBytes': 1024 * 1024 * 5,
+            'backupCount': 3,
+            'formatter': 'verbose',
+        },
+       
+        'applicants_app_logfile': { # You can create a dedicated file if desired
+            'level': 'DEBUG', # Capture everything from DEBUG up for applicants app
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'log', 'applicants_app.log'), # Dedicated log file
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 3,
+            'formatter': 'standard_file',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'application_logfile'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['error_logfile', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG', # Keep this DEBUG if you want to see SQL in console
+            'propagate': False,
+        },
+
+        # === LOGGER FOR YOUR 'applicants' APP ===
+        'applicants': {  # This is the key for your applicants app
+          
+            'handlers': ['console', 'application_logfile', 'error_logfile', 'applicants_app_logfile'],
+           
+            'level': 'DEBUG',  # Capture all messages from DEBUG up from 'applicants' app
+            'propagate': False, # Set to False if you want ONLY these handlers for 'applicants'.
+                               # Set to True if you also want 'root' handlers to process these messages.
+                               # For app-specific files, False is often cleaner.
+        },
+        # === End 'applicants' app logger ===
+
+        # Loggers for your other apps (keep them or adjust as needed)
+        'cashflow': {
+            'handlers': ['console', 'application_logfile', 'error_logfile'],
+            'level': 'DEBUG', # Or INFO if you don't need as much detail from them
+            'propagate': False,
+        },
+        'employees': {
+            'handlers': ['console', 'application_logfile', 'error_logfile'],
+            'level': 'DEBUG', # Or INFO
+            'propagate': False,
+        },
+        # ... and so on for finance_app, loanapp, loanrequest, property_management, comment
+
+        'root': {
+            'handlers': ['console', 'application_logfile'],
+            'level': 'INFO',
+        }
+    }
+}
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -39,13 +137,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'employees',
-    'loans',
     'applicants',
-    'banking',
     'corsheaders',
     'cashflow',
     'loanrequest',
-    'nominees',
     'rest_framework',
     'finance_app',
     'property_management',
@@ -94,13 +189,13 @@ WSGI_APPLICATION = 'spkproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'defaultdb',
-        'USER': 'avnadmin',
-        'PASSWORD': 'AVNS_aVTUKlPYdfn5jJ1vbWx',  # replace with the actual password
-        'HOST': 'pg-300d76ba-santhosh20cs045k-744e.l.aivencloud.com',
-        'PORT': '25870',
+        'NAME': 'updatefin',
+        'USER': 'postgres',
+        'PASSWORD': 'bharath',  # replace with the actual password
+        'HOST': 'localhost',
+        'PORT': '5432',
         'OPTIONS': {
-            'sslmode': 'require',
+            'sslmode': 'disable',
         },
     }
 }
@@ -159,3 +254,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media', 'uploads')
 # CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
 CORS_ALLOW_ALL_ORIGINS = True 
 CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+
+# settings.py
+

@@ -25,7 +25,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import DocumentUpload from "./IdProofSection";
 import { initialFormData, formFields } from './formConfig';
 
-const API_URL = process.env.REACT_APP_API_BASE_URL + "/applicants/applicants/";
+const API_URL = process.env.REACT_APP_API_BASE_URL + "api/applicants/applicants/";
 
 const LoanApplicationForm = () => {
   const location = useLocation();
@@ -224,28 +224,13 @@ const LoanApplicationForm = () => {
   };
 
   // Form submission
-  const handleSubmit = async (e) => {
+   // Form submission
+   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
-
-      // Prepare the plain JSON object (not FormData)
-      const editData = {
-        ...formData,
-        employment: formData.employment,
-        banking_details: formData.banking_details,
-        properties: formData.properties,
-        proofs: applicantDocuments.map(doc => ({
-          id: doc.id,
-          type: doc.type,
-          idNumber: doc.idNumber,
-          // Don't include file here, as it's a File object
-        }))
-      };
-
-      console.log("Edit data (JSON):", JSON.stringify(editData, null, 2));
 
       // Create FormData object
       const formDataToSend = new FormData();
@@ -254,12 +239,17 @@ const LoanApplicationForm = () => {
       const mainFields = [
         'title', 'first_name', 'last_name', 'dateOfBirth', 'gender',
         'maritalStatus', 'email', 'phone', 'address', 'city', 'state',
-        'postalCode', 'is_deleted', 'is_approved'
+        'postalCode', 'is_deleted', 'is_approved' // Include any other flat fields from formData
       ];
 
       mainFields.forEach(field => {
         if (formData[field] !== null && formData[field] !== undefined) {
-          formDataToSend.append(field, formData[field]);
+          // For boolean fields, ensure they are sent as 'true' or 'false' strings if backend expects that for FormData
+          if (typeof formData[field] === 'boolean') {
+            formDataToSend.append(field, formData[field].toString());
+          } else {
+            formDataToSend.append(field, formData[field]);
+          }
         }
       });
 
@@ -267,76 +257,132 @@ const LoanApplicationForm = () => {
       if (profilePhotoFile instanceof File) {
         formDataToSend.append('profile_photo', profilePhotoFile);
       }
+      // If editing and no new file, backend should retain the old one or handle profile_photo_url if you send it.
+      // For now, we only send if a new file is selected. Backend's PATCH should handle missing fields gracefully.
 
-      // Handle employment data
-      if (formData.employment?.length > 0) {
-        formDataToSend.append('employment', JSON.stringify(formData.employment));
-      }
-
-      // Handle banking details
-      if (formData.banking_details?.length > 0) {
-        formDataToSend.append('banking_details', JSON.stringify(formData.banking_details));
-      }
-
-      // Handle properties
-      if (formData.properties?.length > 0) {
-        formDataToSend.append('properties', JSON.stringify(formData.properties));
-      }
-
-      // Handle proof documents
-      if (applicantDocuments.length > 0) {
-        applicantDocuments.forEach((doc, index) => {
-          const prefix = `proofs[${index}]`;
-          if (doc.id) {
-            formDataToSend.append(`${prefix}[id]`, doc.id);
+      // --- CORRECTED: Handle employment data ---
+      if (formData.employment && formData.employment.length > 0) {
+        formData.employment.forEach((emp, index) => {
+          const prefix = `employment[${index}]`;
+          if (emp.id) { // Send ID if it's an update to an existing employment record
+            formDataToSend.append(`${prefix}[id]`, emp.id);
           }
-          formDataToSend.append(`${prefix}[type]`, doc.type);
-          formDataToSend.append(`${prefix}[idNumber]`, doc.idNumber);
-          
-          // Only append file if it's a new File object
-          if (doc.file instanceof File) {
-            formDataToSend.append(`${prefix}[file]`, doc.file);
-          }
+          // Safely append other fields
+          if (emp.employmentType !== null && emp.employmentType !== undefined) formDataToSend.append(`${prefix}[employmentType]`, emp.employmentType);
+          if (emp.jobTitle !== null && emp.jobTitle !== undefined) formDataToSend.append(`${prefix}[jobTitle]`, emp.jobTitle);
+          if (emp.yearsWithEmployer !== null && emp.yearsWithEmployer !== undefined) formDataToSend.append(`${prefix}[yearsWithEmployer]`, emp.yearsWithEmployer);
+          if (emp.monthlyIncome !== null && emp.monthlyIncome !== undefined) formDataToSend.append(`${prefix}[monthlyIncome]`, emp.monthlyIncome);
+          if (emp.otherIncome !== null && emp.otherIncome !== undefined) formDataToSend.append(`${prefix}[otherIncome]`, emp.otherIncome);
         });
       }
 
+      // --- CORRECTED: Handle banking details ---
+      if (formData.banking_details && formData.banking_details.length > 0) {
+        formData.banking_details.forEach((bank, index) => {
+          const prefix = `banking_details[${index}]`;
+          if (bank.id) {
+            formDataToSend.append(`${prefix}[id]`, bank.id);
+          }
+          if (bank.accountHolderName !== null && bank.accountHolderName !== undefined) formDataToSend.append(`${prefix}[accountHolderName]`, bank.accountHolderName);
+          if (bank.accountNumber !== null && bank.accountNumber !== undefined) formDataToSend.append(`${prefix}[accountNumber]`, bank.accountNumber);
+          if (bank.bankName !== null && bank.bankName !== undefined) formDataToSend.append(`${prefix}[bankName]`, bank.bankName);
+          if (bank.ifscCode !== null && bank.ifscCode !== undefined) formDataToSend.append(`${prefix}[ifscCode]`, bank.ifscCode);
+          if (bank.bankBranch !== null && bank.bankBranch !== undefined) formDataToSend.append(`${prefix}[bankBranch]`, bank.bankBranch);
+          if (bank.accountType !== null && bank.accountType !== undefined) formDataToSend.append(`${prefix}[accountType]`, bank.accountType);
+        });
+      }
+
+      // --- CORRECTED: Handle properties ---
+      if (formData.properties && formData.properties.length > 0) {
+        formData.properties.forEach((prop, index) => {
+          const prefix = `properties[${index}]`;
+          if (prop.id) {
+            formDataToSend.append(`${prefix}[id]`, prop.id);
+          }
+          if (prop.propertyType !== null && prop.propertyType !== undefined) formDataToSend.append(`${prefix}[propertyType]`, prop.propertyType);
+          if (prop.property_address !== null && prop.property_address !== undefined) formDataToSend.append(`${prefix}[property_address]`, prop.property_address);
+          if (prop.propertyValue !== null && prop.propertyValue !== undefined) formDataToSend.append(`${prefix}[propertyValue]`, prop.propertyValue);
+          if (prop.propertyAge !== null && prop.propertyAge !== undefined) formDataToSend.append(`${prefix}[propertyAge]`, prop.propertyAge);
+          if (prop.propertyOwnership !== null && prop.propertyOwnership !== undefined) formDataToSend.append(`${prefix}[propertyOwnership]`, prop.propertyOwnership);
+          if (prop.remarks !== null && prop.remarks !== undefined) formDataToSend.append(`${prefix}[remarks]`, prop.remarks);
+        });
+      }
+
+      // Handle proof documents (This part was already mostly correct)
+      if (applicantDocuments.length > 0) {
+        applicantDocuments.forEach((doc, index) => {
+          const prefix = `proofs[${index}]`;
+          if (doc.id) { // Send ID if updating an existing proof
+            formDataToSend.append(`${prefix}[id]`, doc.id);
+          }
+          // Always send type and idNumber if they exist
+          if (doc.type !== null && doc.type !== undefined) formDataToSend.append(`${prefix}[type]`, doc.type);
+          if (doc.idNumber !== null && doc.idNumber !== undefined) formDataToSend.append(`${prefix}[idNumber]`, doc.idNumber);
+          
+          // Only append file if it's a new File object (i.e., user selected a new file for this proof)
+          if (doc.file instanceof File) {
+            formDataToSend.append(`${prefix}[file]`, doc.file);
+          }
+          // If doc.file is a URL string (existing file not changed), DO NOT append it.
+          // The backend should retain the existing file if no new file is sent for an existing proof ID.
+        });
+      }
+
+      // For debugging: Log the FormData keys and values
+      console.log("--- FormData to be sent (PATCH) ---");
+      for (let pair of formDataToSend.entries()) {
+        console.log(pair[0] + ': ', pair[1]);
+      }
+      console.log("------------------------------------");
+
       const response = await axios({
-        method: 'PATCH',
+        method: 'PATCH', // Using PATCH for partial updates
         url: `${API_URL}${applicantId}/`,
-        data: formDataToSend,
+        data: formDataToSend, // FormData object
         headers: {
-          'Content-Type': 'multipart/form-data',
+          // 'Content-Type': 'multipart/form-data', // Axios sets this automatically with boundary for FormData
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.data.status === 'success') {
         toast.success('Applicant updated successfully');
-        navigate('/apps-chat');
+        navigate('/apps-chat'); // Or wherever you want to redirect
       } else {
-        toast.error('Update failed');
+        // This case might not be hit if backend returns non-2xx for errors
+        toast.error(response.data.message || 'Update failed with non-success status');
       }
     } catch (error) {
       console.error('Update error:', error);
-      
-      // Handle validation errors
-      if (error.response?.data?.errors) {
-        const errors = error.response.data.errors;
-        Object.entries(errors).forEach(([field, errorMessages]) => {
-          if (Array.isArray(errorMessages)) {
-            errorMessages.forEach(msg => {
-              toast.error(`${field}: ${msg}`);
-            });
-          } else if (typeof errorMessages === 'object') {
-            Object.values(errorMessages).forEach(msgs => {
-              msgs.forEach(msg => {
-                toast.error(`${field}: ${msg}`);
-              });
-            });
-          }
-        });
+      let errorMsg = "Update failed. An unexpected error occurred.";
+      if (error.response) {
+        console.error("Error Response Data:", error.response.data);
+        const responseData = error.response.data;
+        if (responseData && typeof responseData === 'object') {
+            if (responseData.message && typeof responseData.message === 'string') {
+                 errorMsg = responseData.message;
+            } else if (responseData.errors && typeof responseData.errors === 'object') {
+                const fieldErrors = Object.entries(responseData.errors)
+                    .map(([key, value]) => {
+                        const messages = Array.isArray(value) ? value.join(', ') : (typeof value === 'object' ? JSON.stringify(value) : String(value));
+                        return `${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${messages}`;
+                    })
+                    .join('; ');
+                errorMsg = fieldErrors || "Validation failed. Please check the details.";
+            } else if (responseData.detail && typeof responseData.detail === 'string') {
+                errorMsg = responseData.detail;
+            } else {
+                // Fallback for other object structures
+                errorMsg = JSON.stringify(responseData);
+            }
+        } else if (typeof responseData === 'string') {
+            errorMsg = responseData;
+        }
+         toast.error(`Update failed: ${errorMsg}`);
+      } else if (error.request) {
+        toast.error("Update failed: No response from server.");
       } else {
-        toast.error(error.response?.data?.message || 'Update failed');
+        toast.error(`Update failed: ${error.message}`);
       }
     } finally {
       setIsSubmitting(false);
