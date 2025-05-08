@@ -15,12 +15,44 @@ const ApprovalStatus = () => {
     const fetchLoans = async () => {
         try {
             const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}api/apply-loan/loan-applications/`);
-            setLoans(response.data);
+            const filteredLoans = filterLoans(response.data);
+            setLoans(filteredLoans);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching loan applications:', error);
             setLoading(false);
         }
+    };
+
+    // Filter loans to show only those with pending payments in current month
+    const filterLoans = (loans) => {
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth() + 1; // Months are 0-indexed
+        
+        // Calculate date range (29th of previous month to 28th of current month)
+        let startDate, endDate;
+        if (currentDate.getDate() >= 29) {
+            // From 29th of current month to 28th of next month
+            startDate = new Date(currentYear, currentMonth - 1, 29);
+            endDate = new Date(currentYear, currentMonth, 28);
+        } else {
+            // From 29th of previous month to 28th of current month
+            startDate = new Date(currentYear, currentMonth - 2, 29);
+            endDate = new Date(currentYear, currentMonth - 1, 28);
+        }
+
+        return loans.filter(loan => {
+            // Check if any EMI is in current period and has pending payment
+            return loan.emiSchedule.some(emi => {
+                const emiDate = new Date(emi.emiStartDate);
+                return (
+                    emiDate >= startDate && 
+                    emiDate <= endDate && 
+                    (emi.emiTotalMonth - emi.paymentAmount) > 0
+                );
+            });
+        });
     };
 
     const getStatusIcon = (status) => {
@@ -34,13 +66,31 @@ const ApprovalStatus = () => {
         }
     };
 
-    // Calculate total EMI amount from the schedule
-    const getTotalEmiAmount = (emiSchedule) => {
+    // Calculate pending EMI amount from the schedule
+    const getPendingEmiAmount = (emiSchedule) => {
         if (!emiSchedule || emiSchedule.length === 0) return 0;
-        return emiSchedule.reduce((total, emi) => total + emi.paymentAmount, 0);
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth() + 1;
+        
+        let startDate, endDate;
+        if (currentDate.getDate() >= 29) {
+            startDate = new Date(currentYear, currentMonth - 1, 29);
+            endDate = new Date(currentYear, currentMonth, 28);
+        } else {
+            startDate = new Date(currentYear, currentMonth - 2, 29);
+            endDate = new Date(currentYear, currentMonth - 1, 28);
+        }
+
+        return emiSchedule
+            .filter(emi => {
+                const emiDate = new Date(emi.emiStartDate);
+                return emiDate >= startDate && emiDate <= endDate;
+            })
+            .reduce((total, emi) => total + (emi.emiTotalMonth - emi.paymentAmount), 0);
     };
 
-    document.title = "Approval Status | SPK Finance";
+    document.title = "Outstanding | SPK Finance";
 
     return (
         <div className="page-content">
@@ -61,7 +111,7 @@ const ApprovalStatus = () => {
                                             <th>Loan ID</th>
                                             <th>Date</th>
                                             <th>Name</th>
-                                            <th>EMI Amount</th>
+                                            <th>Pending EMI Amount</th>
                                             <th>EMI Months</th>
                                             <th>Phone Number</th>
                                             <th>Status</th>
@@ -74,7 +124,7 @@ const ApprovalStatus = () => {
                                             </tr>
                                         ) : loans.length === 0 ? (
                                             <tr>
-                                                <td colSpan="7" className="text-center">No loan applications found</td>
+                                                <td colSpan="7" className="text-center">No pending loan applications found</td>
                                             </tr>
                                         ) : (
                                             loans.map((loan) => (
@@ -82,12 +132,11 @@ const ApprovalStatus = () => {
                                                     <td>{loan.loanID}</td>
                                                     <td>{loan.LoanRegDate}</td>
                                                     <td>{loan.first_name}</td>
-                                                    <td>{getTotalEmiAmount(loan.emiSchedule)}</td>
+                                                    <td>{getPendingEmiAmount(loan.emiSchedule)}</td>
                                                     <td>{loan.term}</td>
                                                     <td>{loan.phone}</td>
                                                     <td className="text-center">
-                                                        {/* You might need to adjust this based on your actual status field */}
-                                                        {getStatusIcon(true)}
+                                                        {getStatusIcon(getPendingEmiAmount(loan.emiSchedule) === 0)}
                                                     </td>
                                                 </tr>
                                             ))

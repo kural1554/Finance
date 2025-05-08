@@ -104,7 +104,19 @@ DATABASES = {
         },
     }
 }
-
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'spkfinancedatabase',
+#         'USER': 'postgres',
+#         'PASSWORD': 'spk',  # replace with the actual password
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#         'OPTIONS': {
+#             'sslmode': 'disable',
+#         },
+#     }
+# }
 
 
 # Password validation

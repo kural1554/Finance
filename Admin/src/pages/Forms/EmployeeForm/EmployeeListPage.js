@@ -264,18 +264,16 @@ function EmployeeListPage() {
     };
     const handleDelete = async (employeeID) => {
         if (window.confirm("Are you sure you want to delete this employee?")) {
-          try {
-            await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/employees/${employeeID}/`);
-      
-            // Assuming employeeID is the correct unique key from the backend
-            setTableData((prevData) => prevData.filter((emp) => emp.id !== employeeID)); // or emp.employeeID
-            alert("✅ Employee deleted successfully!");
-          } catch (error) {
-            console.error("❌ Error deleting employee:", error);
-            alert("Failed to delete employee.");
-          }
+            try {
+                await axios.delete(`${process.env.REACT_APP_API_BASE_URL}api/employees/${employeeID}/`);
+                setTableData((prevData) => prevData.filter((emp) => emp.employeeID !== employeeID));
+                alert("✅ Employee deleted successfully!");
+            } catch (error) {
+                console.error("❌ Error deleting employee:", error);
+                alert("Failed to delete employee.");
+            }
         }
-      };
+    };
     const columns = useMemo(
         () => [
             { Header: "ID", accessor: "id" },
