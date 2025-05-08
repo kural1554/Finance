@@ -163,23 +163,21 @@ const LoanApplicationForm = () => {
     e.preventDefault();
     console.log("Form data before packaging into FormData:", formData);
     console.log("Applicant documents state on submit:", applicantDocuments);
-
-    // Optional: Add validation check for the entire form before creating FormData
-    // const formIsValid = validateForm(null, formData, setErrors); // Assuming validateForm checks all
-    // if (!formIsValid) {
-    //    toast.error("Please fix the errors in the form.");
-    //    return;
-    // }
-    
+    console.log("Profile photo file on submit:", profilePhotoFile);
+  
     // --- Create FormData ---
     const submissionData = new FormData();
+
     if (profilePhotoFile) {
-      submissionData.append('profile_photo', profilePhotoFile);
+      submissionData.append('profile_photo', profilePhotoFile, profilePhotoFile.name);
+    } else {
+      // If you want to explicitly send null or empty if no photo,
+      // but usually not appending is fine if the backend handles optional photo.
+      // submissionData.append('profile_photo', ''); // Or handle as backend expects
     }
-    // --- Append Simple Fields ---
-    // Helper to safely append, handling null/undefined
+    
     const safeAppend = (key, value) => {
-      if (value !== null && value !== undefined) {
+      if (value !== null && value !== undefined && value !== '') {
         submissionData.append(key, value);
       } else {
         submissionData.append(key, ''); // Send empty string for null/undefined
@@ -200,43 +198,42 @@ const LoanApplicationForm = () => {
     safeAppend('state', formData.state);
     safeAppend('postalCode', formData.postalCode);
 
-
-    // --- Append Nested Fields (using dot notation - common for DRF, check your backend!) ---
-    // Assuming only one entry for employment, banking, properties based on your form structure
-
-    // Employment (index 0)
-    safeAppend('employment[0]employmentType', formData.employmentType);
-    safeAppend('employment[0]jobTitle', formData.jobTitle);
-    safeAppend('employment[0]yearsWithEmployer', formData.yearsWithEmployer);
-    safeAppend('employment[0]monthlyIncome', formData.monthlyIncome);
-    safeAppend('employment[0]otherIncome', formData.otherIncome); // Handle optional field
-
+    if (formData.employmentType || formData.jobTitle) { 
+    safeAppend('employment[0][employmentType]', formData.employmentType); 
+    safeAppend('employment[0][jobTitle]', formData.jobTitle);
+    safeAppend('employment[0][yearsWithEmployer]', formData.yearsWithEmployer);
+    safeAppend('employment[0][monthlyIncome]', formData.monthlyIncome);
+    safeAppend('employment[0][otherIncome]', formData.otherIncome); // Handle optional field
+    }
     // Banking Details (index 0)
-    safeAppend('banking_details[0]accountHolderName', formData.accountHolderName);
-    safeAppend('banking_details[0]accountNumber', formData.accountNumber);
-    safeAppend('banking_details[0]bankName', formData.bankName);
-    safeAppend('banking_details[0]ifscCode', formData.ifscCode);
-    safeAppend('banking_details[0]bankBranch', formData.bankBranch);
-    safeAppend('banking_details[0]accountType', formData.accountType);
-
-    // Properties (index 0)
-    safeAppend('properties[0]propertyType', formData.propertyType);
-    safeAppend('properties[0]property_address', formData.property_address);
-    safeAppend('properties[0]propertyValue', formData.propertyValue);
-    safeAppend('properties[0]propertyAge', formData.propertyAge);
-    safeAppend('properties[0]propertyOwnership', formData.propertyOwnership);
-
+    if (formData.accountHolderName || formData.accountNumber) {
+      safeAppend('banking_details[0][accountHolderName]', formData.accountHolderName);
+        safeAppend('banking_details[0][accountNumber]', formData.accountNumber);
+        safeAppend('banking_details[0][bankName]', formData.bankName);
+        safeAppend('banking_details[0][ifscCode]', formData.ifscCode);
+        safeAppend('banking_details[0][bankBranch]', formData.bankBranch);
+        safeAppend('banking_details[0][accountType]', formData.accountType);
+    }
+    if (formData.propertyType || formData.property_address) { // Check if any property data exists
+      safeAppend('properties[0][propertyType]', formData.propertyType);
+      safeAppend('properties[0][property_address]', formData.property_address);
+      safeAppend('properties[0][propertyValue]', formData.propertyValue);
+      safeAppend('properties[0][propertyAge]', formData.propertyAge);
+      safeAppend('properties[0][propertyOwnership]', formData.propertyOwnership);
+      // remarks field illainu nenaikuren unga formData la, iruntha add pannikonga:
+      // safeAppend('properties[0][remarks]', formData.remarks);
+  }
     // Option 2: Indexed structure matching other nested fields (if backend supports it)
     applicantDocuments.forEach((doc, index) => {
-      if (doc.file) {
-        safeAppend(`proofs[${index}]type`, doc.type);
-        safeAppend(`proofs[${index}]idNumber`, doc.idNumber);
-        submissionData.append(`proofs[${index}]file`, doc.file, doc.file.name);
+      if (doc.file  && doc.type && doc.idNumber) {
+        safeAppend(`proofs[${index}][type]`, doc.type);
+        safeAppend(`proofs[${index}][idNumber]`, doc.idNumber);
+        submissionData.append(`proofs[${index}][file]`, doc.file, doc.file.name);
       }
     });
   
     // --- Log FormData Contents (for debugging) ---
-    console.log("--- FormData to be sent ---");
+    console.log("--- FormData to be sent (Corrected Structure) ---");
     for (let pair of submissionData.entries()) {
       console.log(pair[0] + ': ', pair[1]);
     }
@@ -249,11 +246,7 @@ const LoanApplicationForm = () => {
         `${process.env.REACT_APP_API_BASE_URL}api/applicants/applicants/`,
         submissionData, // Pass the FormData object directly
         {
-          // **IMPORTANT: Do NOT manually set Content-Type header**
-          // Axios will automatically set it to multipart/form-data with the correct boundary
-          // headers: {
-          //   "Content-Type": "multipart/form-data", // REMOVE THIS LINE
-          // },
+          
         }
       );
 
@@ -263,6 +256,8 @@ const LoanApplicationForm = () => {
       
     } catch (error) {
       console.error("Error posting form:", error);
+      let errorMsg = "Submission failed. An unexpected error occurred."; 
+      
       if (error.response) {
         console.error("Error Response Data:", error.response.data);
         console.error("Error Response Status:", error.response.status);
@@ -286,7 +281,7 @@ const LoanApplicationForm = () => {
           // If data is not an object or is null/undefined
           errorMsg = `Submission failed: Server responded with status ${error.response.status}.`;
         }
-        toast.error(errorMsg);
+        toast.error(`Submission failed: ${errorMsg}`);
 
       } else if (error.request) {
         console.error("Error Request:", error.request);

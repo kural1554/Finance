@@ -12,7 +12,8 @@ import "jspdf-autotable";
 import FeatherIcon from "feather-icons-react";
 import { Button } from "reactstrap";
 import axios from "axios";
-
+import { toast } from 'react-toastify'; // <--- INTHA LINE ADD PANNUNGA
+import 'react-toastify/dist/ReactToastify.css';
 // API URL for applicant data
 const API_URL = `${process.env.REACT_APP_API_BASE_URL}api/applicants/applicants/`;
 
@@ -280,23 +281,40 @@ function ApplicantsTable() {
     };
 
     // Handle delete applicant with confirmation
-    const handleDeleteApplicant = async (id) => {
-        if (window.confirm('Are you sure you want to delete this applicant?')) {
-            try {
-                const response = await axios.delete(`${process.env.REACT_APP_API_BASE_URL}api/applicants/delete-applicant/${id}/`);
 
-                if (response.status === 200) {
-                    fetchApplicantData();
-                    alert('Applicant deleted successfully');
-                } else {
-                    alert('Failed to delete applicant. Please try again.');
+        // Handle delete applicant with confirmation
+        const handleDeleteApplicant = async (id) => {
+            
+            // Confirmation dialog
+            if (window.confirm(`Are you sure you want to soft-delete applicant ID: ${id}? This can be restored later.`)) {
+                try {
+                    const token = sessionStorage.getItem("token"); // Get token
+                    // --- CORRECTED URL ---
+                    // Use the standard endpoint for DELETE request defined by your router for the ViewSet
+                    const response = await axios.delete(`${API_URL}${id}/`, { // API_URL already includes /api/applicants/applicants/
+                        headers: {
+                            'Authorization': `Bearer ${token}` // Include Authorization header
+                        }
+                    });
+                    // --- End CORRECTED URL ---
+    
+                    // Check response status code for success (usually 204 No Content for DELETE)
+                    if (response.status === 204) {
+                        toast.success('Applicant soft-deleted successfully'); // Use toast for consistency
+                        fetchApplicantData(); // Refresh the table data
+                    } else {
+                        // This might not be hit if backend throws error, catch block handles errors
+                        toast.error(response.data?.message || 'Failed to delete applicant.');
+                    }
+                } catch (error) {
+                    console.error('Error deleting applicant:', error);
+                    // Display error from backend if available, otherwise generic message
+                    const errorMsg = error.response?.data?.message || error.response?.data?.detail || 'An error occurred while deleting.';
+                    toast.error(`Delete failed: ${errorMsg}`);
+
                 }
-            } catch (error) {
-                console.error('Error deleting applicant:', error);
-                alert('An error occurred while deleting the applicant.');
             }
-        }
-    };
+        };
 
     // Function to export data as PDF
     const exportPDF = (data) => {
