@@ -1,5 +1,5 @@
 import PropTypes from "prop-types"
-import React, { useEffect, useRef, useCallback } from "react"
+import React, { useEffect, useRef, useCallback, useState } from "react"
 
 //Import Icons
 import FeatherIcon from "feather-icons-react";
@@ -20,6 +20,19 @@ import { withTranslation } from "react-i18next"
 
 const SidebarContent = props => {
   const ref = useRef();
+  
+  const [currentUserRole, setCurrentUserRole] = useState(null);
+  const [isCurrentUserSuperuser, setIsCurrentUserSuperuser] = useState(false);
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole'); // Use your exact localStorage key
+    const superuserStatus = localStorage.getItem('isSuperuser') === 'true'; // Use your exact key
+
+    setCurrentUserRole(role);
+    setIsCurrentUserSuperuser(superuserStatus);
+    console.log("SidebarContent - Role:", role, "Superuser:", superuserStatus);
+  }, []); 
+
   const activateParentDropdown = useCallback((item) => {
     item.classList.add("active");
     const parent = item.parentElement;
@@ -35,20 +48,19 @@ const SidebarContent = props => {
 
       if (parent2) {
         parent2.classList.add("mm-show"); // ul tag
-
         const parent3 = parent2.parentElement; // li tag
 
-        if (parent3) {
+      if (parent3) {
           parent3.classList.add("mm-active"); // li
           parent3.childNodes[0].classList.add("mm-active"); //a
           const parent4 = parent3.parentElement; // ul
-          if (parent4) {
-            parent4.classList.add("mm-show"); // ul
-            const parent5 = parent4.parentElement;
-            if (parent5) {
-              parent5.classList.add("mm-show"); // li
-              parent5.childNodes[0].classList.add("mm-active"); // a tag
-            }
+      if (parent4) {
+          parent4.classList.add("mm-show"); // ul
+          const parent5 = parent4.parentElement;
+      if (parent5) {
+        parent5.classList.add("mm-show"); // li
+        parent5.childNodes[0].classList.add("mm-active"); // a tag
+      }
           }
         }
       }
@@ -82,19 +94,20 @@ const SidebarContent = props => {
         if (parent2) {
           parent2.classList.remove("mm-show");
 
-          const parent3 = parent2.parentElement;
-          if (parent3) {
-            parent3.classList.remove("mm-active"); // li
-            parent3.childNodes[0].classList.remove("mm-active");
+        const parent3 = parent2.parentElement;
+        if (parent3) {
+          parent3.classList.remove("mm-active"); // li
+          parent3.childNodes[0].classList.remove("mm-active");
 
-            const parent4 = parent3.parentElement; // ul
-            if (parent4) {
-              parent4.classList.remove("mm-show"); // ul
-              const parent5 = parent4.parentElement;
-              if (parent5) {
-                parent5.classList.remove("mm-show"); // li
-                parent5.childNodes[0].classList.remove("mm-active"); // a tag
-              }
+        const parent4 = parent3.parentElement; // ul
+        if (parent4) {
+          parent4.classList.remove("mm-show"); // ul
+
+        const parent5 = parent4.parentElement;
+        if (parent5) {
+          parent5.classList.remove("mm-show"); // li
+          parent5.childNodes[0].classList.remove("mm-active"); // a tag
+        }
             }
           }
         }
@@ -143,13 +156,18 @@ const SidebarContent = props => {
       }
     }
   }
-
+const canView = (allowedRoles) => {
+    if (isCurrentUserSuperuser) return true; // Superuser sees everything
+    if (!currentUserRole || !allowedRoles) return false; // Not logged in or no roles defined for item
+    return allowedRoles.includes(currentUserRole);
+  };
   return (
     <React.Fragment>
       <SimpleBar style={{ maxHeight: "100%" }} ref={ref}>
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
             <li className="menu-title">{props.t("Menu")} </li>
+            
             <li>
               <Link to="/dashboard" className="">
                 <FeatherIcon
@@ -158,6 +176,7 @@ const SidebarContent = props => {
                 <span>{props.t("Dashboard")}</span>
               </Link>
             </li>
+          
             <li>
               <Link to="/outstanding" className="">
                 <FeatherIcon
@@ -173,12 +192,14 @@ const SidebarContent = props => {
               </Link>
               </li>
                {/* CashFlow */}
+                {canView(["Superuse","Admin"]) && ( // Or simply ! (currentUserRole === 'Manager')
             <li>
+           
               <Link to="/cashflow" className="">
               <i className='bx bx-rupee'></i>{" "}
                 <span>{props.t("Cashflow")}</span>
               </Link>
-            </li>
+            </li>)}
             {/* Loan Request */}
             <li>
               <Link to="/LoanRequest" className="">
@@ -188,18 +209,19 @@ const SidebarContent = props => {
             </li>
             {/* loan management */}
             <li>
-              <Link to="/apps-chat" className="">
+              <Link to="/applicantlist" className="">
               <i className='bx bxs-bank'></i>{" "}
                 <span>{props.t("Loan Management")}</span>
               </Link>
             </li>
             {/* employeelistpage */}
+             {canView(["Superuse","Admin","Manager"]) && ( // Or simply ! (currentUserRole === 'Manager')
             <li>
               <Link to="/employeelistpage" className="">
               <i className='bx bxs-user'></i>{" "}
                 <span>{props.t("Employee Form")}</span>
               </Link>
-            </li>
+            </li>)}
             {/* calculater */}
             <li>
               <Link to="/emi-calculator" className="">
@@ -219,7 +241,12 @@ const SidebarContent = props => {
                 <span>{props.t("Approval Status")}</span>
               </Link>
             </li>
-            
+            <li>
+              <Link to="/loan-approvals" className="">
+              <i className='bx bxs-bell'></i>{" "}
+                <span>{props.t("Loan Approvals")}</span>
+              </Link>
+            </li>
               
               {/*  <ul className="sub-menu">
                 <li>

@@ -16,6 +16,7 @@ from rest_framework.permissions import AllowAny
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -57,8 +58,8 @@ LOGGING = {
             'formatter': 'verbose',
         },
        
-        'applicants_app_logfile': { # You can create a dedicated file if desired
-            'level': 'DEBUG', # Capture everything from DEBUG up for applicants app
+        'applicants_app_logfile': { 
+            'level': 'DEBUG', 
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'log', 'applicants_app.log'), # Dedicated log file
             'maxBytes': 1024 * 1024 * 5,  # 5 MB
@@ -84,7 +85,7 @@ LOGGING = {
         },
 
         # === LOGGER FOR YOUR 'applicants' APP ===
-        'applicants': {  # This is the key for your applicants app
+        'applicants': { 
           
             'handlers': ['console', 'application_logfile', 'error_logfile', 'applicants_app_logfile'],
            
@@ -136,16 +137,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
     'employees',
     'applicants',
-    'corsheaders',
     'cashflow',
     'loanrequest',
-    'rest_framework',
     'finance_app',
     'property_management',
     'comment',
     'loanapp',
+    'core',
     'django_extensions',
 ]
 
@@ -186,32 +189,32 @@ WSGI_APPLICATION = 'spkproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'defaultdb',
-        'USER': 'avnadmin',
-        'PASSWORD': 'AVNS_x9yEdSDgXmR7pqRnYgW',  # replace with the actual password
-        'HOST': 'pg-5a6777f-santhosh20cs045k-744e.d.aivencloud.com',
-        'PORT': '25870',
-        'OPTIONS': {
-            'sslmode': 'disable',
-        },
-    }
-}
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'spkfinancedatabase',
-#         'USER': 'postgres',
-#         'PASSWORD': 'spk',  # replace with the actual password
-#         'HOST': 'localhost',
-#         'PORT': '5432',
+#         'NAME': 'defaultdb',
+#         'USER': 'avnadmin',
+#         'PASSWORD': 'AVNS_x9yEdSDgXmR7pqRnYgW',  # replace with the actual password
+#         'HOST': 'pg-5a6777f-santhosh20cs045k-744e.d.aivencloud.com',
+#         'PORT': '25870',
 #         'OPTIONS': {
 #             'sslmode': 'disable',
 #         },
 #     }
 # }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'updatespkfin',
+        'USER': 'postgres',
+        'PASSWORD': 'bharath',  # replace with the actual password
+        'HOST': 'localhost',
+        'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'disable',
+        },
+    }
+}
 
 
 # Password validation
@@ -267,5 +270,52 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media', 'uploads')
 CORS_ALLOW_ALL_ORIGINS = True 
 CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 
-# settings.py
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication', # Good for browsable API
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated', # Default to require login for APIs
+    )
+}
+# settings.py (after REST_FRAMEWORK block)
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60), # Access token valid for 1 hour
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),    # Refresh token valid for 1 day
+    "ROTATE_REFRESH_TOKENS": False, # Set to True if you want new refresh token on each refresh
+    "BLACKLIST_AFTER_ROTATION": False, # Requires blacklisting app if ROTATE_REFRESH_TOKENS is True
+    "UPDATE_LAST_LOGIN": True, # Updates user's last_login field on login
+
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY, # Uses Django's SECRET_KEY
+    "VERIFYING_KEY": None, # Usually not needed if SIGNING_KEY is set
+    "AUDIENCE": None,
+    "ISSUER": None,
+    "JSON_ENCODER": None,
+    "JWK_URL": None,
+    "LEEWAY": 0,
+
+    "AUTH_HEADER_TYPES": ("Bearer",), # Expects "Authorization: Bearer <token>"
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",       # Field on the User model for user_id claim
+    "USER_ID_CLAIM": "user_id",  # Claim name in the token
+    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
+
+    "JTI_CLAIM": "jti",
+
+    # These are not typically used when using the standard Access/Refresh pair
+    # "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
+    # "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
+    # "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
+}
 

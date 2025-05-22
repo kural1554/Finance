@@ -16,14 +16,13 @@ class CombinedDataView(APIView):
     def get(self, request):
         applicants = ApplicantSerializer(Applicant.objects.all(), many=True).data
         loans = LoanSerializer(Loan.objects.all(), many=True).data
-        banking = BankDetailsSerializer(BankDetails.objects.all(), many=True).data
-        nominees = NomineeSerializer(Nominee.objects.all(), many=True).data
+        
+        
         employees = EmployeeSerializer(EmployeeDetails.objects.all(), many=True).data
 
         return Response({
             "applicants": applicants,
             "loans": loans,
-            "banking": banking,
-            "nominees": nominees,
+            
             "employees": employees
         })

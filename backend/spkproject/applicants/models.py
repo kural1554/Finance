@@ -1,12 +1,9 @@
 import uuid
 from django.db import models
-from django.db.models import Max
-from django.db import transaction
 
 # --- Add this Manager ---
 class ActiveApplicantsManager(models.Manager):
     def get_queryset(self):
-        # Filters out objects where is_deleted is True
         return super().get_queryset().filter(is_deleted=False)
 # --- End Manager ---
 
@@ -22,8 +19,6 @@ class Applicant(models.Model):
     TITLE_CHOICES = [(1, 'Mr.'), (2, 'Mrs.'), (3, 'Ms.'), (4, 'Dr.')]
     GENDER_CHOICES = [(1, 'Male'), (2, 'Female')]
     MARITAL_STATUS_CHOICES = [(1, 'Single'), (2, 'Married'), (3, 'Divorced'), (4, 'Widowed')]
-
-    loan_id = models.IntegerField(null=True, blank=True, editable=False, unique=True)  # Allow blank for initial creation if not yet assigned
     loanreg_date = models.DateField(auto_now_add=True)
     title = models.IntegerField(choices=TITLE_CHOICES, null=True, blank=True)
     first_name = models.CharField(max_length=20,blank=False)
@@ -42,22 +37,19 @@ class Applicant(models.Model):
     is_approved = models.BooleanField(default=False)
 
      # --- Add these Managers ---
-    objects = ActiveApplicantsManager() # Default manager now filters deleted
-    all_objects = models.Manager() # Use this to access all, including deleted
+    objects = ActiveApplicantsManager() 
+    all_objects = models.Manager() 
     # --- End Managers ---
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - UserID: {self.userID}"
-
-    def get_loan_id(self):
-        return self.loan_id if self.loan_id else "No Loan Assigned"
     
      # --- Optional: Add helper methods ---
     def soft_delete(self):
         """Marks the applicant as deleted."""
         self.is_deleted = True
         self.save(update_fields=['is_deleted'])
-        # Note: We are NOT cascading soft delete to children here
+       
 
     def restore(self):
         """Marks the applicant as not deleted."""
