@@ -235,12 +235,7 @@ const canView = (allowedRoles) => {
                 <span>{props.t("Loan Process")}</span>
               </Link>
             </li>
-            <li>
-              <Link to="/approval-status" className="">
-              <i className='bx bxs-badge-check'></i>{" "}
-                <span>{props.t("Approval Status")}</span>
-              </Link>
-            </li>
+            
             <li>
               <Link to="/loan-approvals" className="">
               <i className='bx bxs-bell'></i>{" "}

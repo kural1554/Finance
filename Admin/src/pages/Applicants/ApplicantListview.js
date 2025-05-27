@@ -1,26 +1,35 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import PropTypes from "prop-types";
 import { useTable, useFilters, useGlobalFilter, useAsyncDebounce } from "react-table";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import Breadcrumbs from "../../components/Common/Breadcrumb"; // Assuming this exists
-import { Card, CardBody, CardHeader, Col, Container, Row, Dropdown, DropdownToggle, DropdownMenu } from "reactstrap";
+import { 
+    Card, 
+    CardBody, 
+    CardHeader, 
+    Col, 
+    Container, 
+    Row, 
+    Dropdown, 
+    DropdownToggle, 
+    DropdownMenu, 
+    Badge,
+    Button, 
+    Spinner,
+    Alert
+} from "reactstrap";
 import { CSVLink } from "react-csv";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import FeatherIcon from "feather-icons-react";
-import { Button } from "reactstrap";
 import axios from "axios";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
 const API_URL = `${process.env.REACT_APP_API_BASE_URL}api/applicants/applicants/`;
 
-// Global Filter Component 
 function GlobalFilter({ preGlobalFilteredRows, globalFilter, setGlobalFilter }) {
-    // ... (no changes here)
     const count = preGlobalFilteredRows.length;
     const [value, setValue] = React.useState(globalFilter);
     const onChange = useAsyncDebounce((value) => {
@@ -41,12 +50,15 @@ function GlobalFilter({ preGlobalFilteredRows, globalFilter, setGlobalFilter }) 
         </span>
     );
 }
+GlobalFilter.propTypes = {
+    preGlobalFilteredRows: PropTypes.array.isRequired,
+    globalFilter: PropTypes.string,
+    setGlobalFilter: PropTypes.func.isRequired,
+};
 
-// Table Component (apdiye irukkattum)
-function Table({ columns, data, exportPDF, onEdit, onDelete, onView }) {
-    // ... (no changes here, or minor UI tweaks if needed)
+function Table({ columns, data, exportPDF }) {
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [hiddenColumns, setHiddenColumns] = useState([]);
+    const [hiddenColumns, setHiddenColumns] = useState(['email', 'is_approved']); // Set email and profile status as hidden by default
 
     const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
 
@@ -89,21 +101,22 @@ function Table({ columns, data, exportPDF, onEdit, onDelete, onView }) {
             }
         });
     };
+
     return (
         <React.Fragment>
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3">
                 <div className="d-flex gap-2 mb-2 mb-md-0">
                     <CopyToClipboard text={JSON.stringify(data)}>
-                        <button type="button" className="btn btn-secondary">
-                            <span>Copy</span>
-                        </button>
+                        <Button type="button" color="secondary" outline>
+                            <FeatherIcon icon="copy" size="16" className="me-1" /> Copy
+                        </Button>
                     </CopyToClipboard>
-                    <CSVLink data={data} filename="Applicants.csv" className="btn btn-secondary">
-                        <span>Excel</span>
+                    <CSVLink data={data} filename="Applicants.csv" className="btn btn-outline-secondary">
+                         <FeatherIcon icon="file-text" size="16" className="me-1" /> Excel
                     </CSVLink>
-                    <button onClick={() => exportPDF(data)} type="button" className="btn btn-secondary">
-                        <span>PDF</span>
-                    </button>
+                    <Button onClick={() => exportPDF(data)} type="button" color="secondary" outline>
+                        <FeatherIcon icon="download" size="16" className="me-1" /> PDF
+                    </Button>
                 </div>
 
                 <div className="d-flex gap-2 align-items-center">
@@ -113,11 +126,12 @@ function Table({ columns, data, exportPDF, onEdit, onDelete, onView }) {
                         setGlobalFilter={setGlobalFilter}
                     />
                     <Dropdown isOpen={dropdownOpen} toggle={toggleDropdown}>
-                        <DropdownToggle caret color="primary">
-                            <FeatherIcon icon="filter" />
+                        <DropdownToggle caret color="primary" outline>
+                            <FeatherIcon icon="columns" size="16" className="me-1"/> Columns
                         </DropdownToggle>
-                        <DropdownMenu>
+                        <DropdownMenu end>
                             {allColumns.map((column) => (
+                                !['action'].includes(column.id) &&
                                 <div key={column.id} className="px-3 py-1">
                                     <label
                                         style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
@@ -125,26 +139,18 @@ function Table({ columns, data, exportPDF, onEdit, onDelete, onView }) {
                                             e.stopPropagation();
                                             toggleColumnVisibility(column.id);
                                         }}
+                                        className="form-check-label"
                                     >
                                         <input
                                             type="checkbox"
+                                            className="form-check-input me-2"
                                             checked={!hiddenColumns.includes(column.id)}
-                                            onChange={(e) => {
-                                                e.stopPropagation();
-                                                toggleColumnVisibility(column.id);
-                                            }}
+                                            onChange={() => {}}
                                             role="checkbox"
                                             aria-checked={!hiddenColumns.includes(column.id)}
-                                            tabIndex="0"
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' || e.key === ' ') {
-                                                    e.preventDefault();
-                                                    toggleColumnVisibility(column.id);
-                                                }
-                                            }}
-                                            style={{ marginRight: "8px" }}
+                                            readOnly
                                         />
-                                        {column.id}
+                                        {typeof column.Header === 'string' ? column.Header : column.id}
                                     </label>
                                 </div>
                             ))}
@@ -154,8 +160,8 @@ function Table({ columns, data, exportPDF, onEdit, onDelete, onView }) {
             </div>
 
             <div className="table-responsive">
-                <table className="table" {...getTableProps()}>
-                    <thead>
+                <table className="table table-hover table-striped table-bordered" {...getTableProps()}>
+                    <thead className="table-light">
                         {headerGroups.map((headerGroup) => (
                             <tr key={headerGroup.id} {...headerGroup.getHeaderGroupProps()}>
                                 {headerGroup.headers.map((column) => (
@@ -183,21 +189,35 @@ function Table({ columns, data, exportPDF, onEdit, onDelete, onView }) {
         </React.Fragment>
     );
 }
+Table.propTypes = {
+    columns: PropTypes.array.isRequired,
+    data: PropTypes.array.isRequired,
+    exportPDF: PropTypes.func.isRequired,
+};
 
-// Main Component
+const getLoanStatusBadgeColor = (status) => {
+    if (!status) return "secondary";
+    const upperStatus = status.toUpperCase();
+    if (upperStatus.includes("REJECTED")) return "danger";
+    if (upperStatus.includes("APPROVED (FINAL)")) return "success";
+    if (upperStatus.includes("MANAGER APPROVED")) return "info";
+    if (upperStatus.includes("ACTIVE")) return "success";
+    if (upperStatus.includes("PENDING")) return "warning";
+    if (upperStatus.includes("NO LOAN")) return "light";
+    return "secondary"; 
+};
+
 function ApplicantListview() {
     const navigate = useNavigate();
     const [tableData, setTableData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const getToken = () => {
-        // Assuming you store token in localStorage after login
-        // If you use sessionStorage or context, adjust accordingly
-        return localStorage.getItem("accessToken"); // Use the same key as in LoanApplicationForm
-    };
+    const getToken = useCallback(() => {
+        return localStorage.getItem("accessToken");
+    }, []);
 
-    const fetchApplicantData = async () => {
+    const fetchApplicantData = useCallback(async () => {
         setIsLoading(true);
         const token = getToken();
 
@@ -205,18 +225,17 @@ function ApplicantListview() {
             setError("Authentication token not found. Please login.");
             setIsLoading(false);
             toast.error("Please login to view applicants.");
-            // Optionally redirect to login
-            // navigate("/login"); 
             return;
         }
 
         try {
             const response = await axios.get(API_URL, {
-                headers: { 
-                    'Authorization': `Bearer ${token}` 
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
             });
-            setTableData(response.data || []); 
+            const data = response.data.results || response.data || [];
+            setTableData(data);
             setError(null);
         } catch (err) {
             console.error("Error fetching applicant data:", err);
@@ -224,50 +243,30 @@ function ApplicantListview() {
             if (err.response) {
                 if (err.response.status === 401) {
                     errorMsg = "Unauthorized. Your session may have expired. Please login again.";
-                    // Optionally handle token refresh or redirect to login
                 } else if (err.response.data && err.response.data.detail) {
                     errorMsg = err.response.data.detail;
                 }
             }
             setError(errorMsg);
             toast.error(errorMsg);
-            // Fallback data (Remove or use only for extreme debugging)
-            // setTableData([{ /* ... sample data ... */ }]);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [getToken]);
 
     useEffect(() => {
         fetchApplicantData();
-    }, []); 
+    }, [fetchApplicantData]);
 
-    const handleViewApplicant = (rowData) => {
+    const handleViewApplicant = useCallback((rowData) => {
         navigate(`/applicantstatus/${rowData.userID}`);
-    };
+    }, [navigate]);
 
-    const handleEditApplicant = (applicantData) => {
+    const handleEditApplicant = useCallback((applicantData) => {
         const transformedData = {
             ...applicantData,
             employmentType: applicantData.employment?.[0]?.employmentType || '',
             jobTitle: applicantData.employment?.[0]?.jobTitle || '',
-            yearsWithEmployer: applicantData.employment?.[0]?.yearsWithEmployer || '',
-            monthlyIncome: applicantData.employment?.[0]?.monthlyIncome || '',
-            otherIncome: applicantData.employment?.[0]?.otherIncome || '',
-            accountHolderName: applicantData.banking_details?.[0]?.accountHolderName || '',
-            accountNumber: applicantData.banking_details?.[0]?.accountNumber || '',
-            bankName: applicantData.banking_details?.[0]?.bankName || '',
-            ifscCode: applicantData.banking_details?.[0]?.ifscCode || '',
-            bankBranch: applicantData.banking_details?.[0]?.bankBranch || '',
-            accountType: applicantData.banking_details?.[0]?.accountType || '',
-            propertyType: applicantData.properties?.[0]?.propertyType || '',
-            property_address: applicantData.properties?.[0]?.property_address || '',
-            propertyValue: applicantData.properties?.[0]?.propertyValue || '',
-            propertyAge: applicantData.properties?.[0]?.propertyAge || '',
-            propertyOwnership: applicantData.properties?.[0]?.propertyOwnership || '',
-            dateOfBirth: applicantData.date_of_birth || '',
-            maritalStatus: applicantData.marital_status || '',
-            postalCode: applicantData.postal_code || ''
         };
         navigate('/applicantEdit', {
             state: {
@@ -276,28 +275,24 @@ function ApplicantListview() {
                 applicantData: transformedData
             }
         });
-    };
+    }, [navigate]);
 
-    const handleDeleteApplicant = async (applicantUserID) => {
+    const handleDeleteApplicant = useCallback(async (applicantUserID) => {
         if (window.confirm(`Are you sure you want to soft-delete applicant ID: ${applicantUserID}? This can be restored later.`)) {
-            const token = getToken(); // Use the consistent getToken function
-
+            const token = getToken();
             if (!token) {
                 toast.error("Authentication token not found. Please login.");
                 return;
             }
-
             try {
-                // API_URL already ends with a slash, so just append the ID and another slash for DRF standard
-                const response = await axios.delete(`${API_URL}${applicantUserID}/`, { 
+                const response = await axios.delete(`${API_URL}${applicantUserID}/`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-    
                 if (response.status === 204) {
                     toast.success('Applicant soft-deleted successfully');
-                    fetchApplicantData(); // Refresh table
+                    fetchApplicantData();
                 } else {
                     toast.error(response.data?.message || 'Failed to delete applicant.');
                 }
@@ -305,7 +300,7 @@ function ApplicantListview() {
                 console.error('Error deleting applicant:', error);
                 let errorMsg = 'An error occurred while deleting.';
                 if (error.response) {
-                     if (error.response.status === 401) {
+                    if (error.response.status === 401) {
                         errorMsg = "Unauthorized. Your session may have expired. Please login again.";
                     } else if (error.response.data) {
                         errorMsg = error.response.data.detail || error.response.data.message || errorMsg;
@@ -314,10 +309,9 @@ function ApplicantListview() {
                 toast.error(`Delete failed: ${errorMsg}`);
             }
         }
-    };
+    }, [getToken, fetchApplicantData]);
 
-    const exportPDF = (data) => {
-        // ... (PDF export logic apdiye irukkattum) ...
+    const exportPDF = useCallback((dataToExport) => {
         const unit = "pt";
         const size = "A4";
         const orientation = "portrait";
@@ -326,13 +320,15 @@ function ApplicantListview() {
 
         doc.setFontSize(15);
         const title = "Applicant Details";
-        const headers = [["ID", "Name", "Phone", "Email", "Status"]];
-        const pdfData = data.map((elt) => [
+        const headers = [["ID", "Name", "Phone", "Email", "Latest Loan ID", "Latest Loan Status"]];
+        const pdfData = dataToExport.map((elt) => [
             elt.userID,
             `${elt.first_name} ${elt.last_name}`,
             elt.phone,
             elt.email,
-            elt.is_approved ? "Approved" : "Pending"
+            elt.is_approved ? "Approved" : "Pending",
+            elt.latest_loan_id || "N/A",
+            elt.latest_loan_status || "N/A"
         ]);
 
         doc.text(title, marginLeft, 40);
@@ -341,115 +337,143 @@ function ApplicantListview() {
             head: headers,
             body: pdfData,
         });
-
         doc.save("Applicants.pdf");
-    };
+    }, []);
 
-    const columns = React.useMemo(
+    const columns = useMemo(
         () => [
-            { Header: "ID", accessor: "userID" },
+            { Header: "Applicant ID", accessor: "userID" },
             {
                 Header: "Photo",
-                accessor: "profile_photo", // Make sure backend sends this field and it's correct
+                accessor: "profile_photo",
                 Cell: ({ row }) => (
                     <img
-                        src={row.original.profile_photo || "https://via.placeholder.com/50x40?text=No+Image"} // Fallback image
+                        src={row.original.profile_photo || "https://via.placeholder.com/50x40?text=No+Image"}
                         alt="Applicant"
-                        style={{ width: "50px", height: "40px", objectFit: "cover" }}
-                        onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/50x40?text=Error"; }} // Handle broken image links
+                        style={{ width: "50px", height: "40px", objectFit: "cover", borderRadius: "4px" }}
+                        onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/50x40?text=Error"; }}
                     />
                 ),
             },
             {
                 Header: "Name",
-                accessor: "first_name",
+                accessor: (row) => `${row.first_name} ${row.last_name}`,
+                id: 'fullName',
                 Cell: ({ row }) => (
                     <span>{row.original.first_name} {row.original.last_name}</span>
                 )
             },
             { Header: "Phone", accessor: "phone" },
-            { Header: "Email", accessor: "email" },
-            { Header: "Registration Date", accessor: "loanreg_date" },
-            {
-                Header: "Status",
-                accessor: "is_approved",
-                Cell: ({ row }) => (
-                    <span className={`badge ${row.original.is_approved ? 'bg-success' : 'bg-warning'}`}>
-                        {row.original.is_approved ? "Approved" : "Pending"}
+            { 
+                Header: "Email", 
+                accessor: "email",
+                Cell: ({ value }) => (
+                    <span className="text-truncate d-inline-block" style={{ maxWidth: '150px' }} title={value}>
+                        {value}
                     </span>
                 )
             },
+            { 
+                Header: "Reg. Date", 
+                accessor: "loanreg_date", 
+                Cell: ({value}) => value ? new Date(value).toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'}) : 'N/A' 
+            },
+            {
+                Header: "Profile Status",
+                accessor: "is_approved",
+                Cell: ({ row }) => (
+                    <Badge color={row.original.is_approved ? 'success' : 'warning'} pill>
+                        {row.original.is_approved ? "Approved" : "Pending"}
+                    </Badge>
+                )
+            },
+            {
+                Header: "Latest Loan Status",
+                accessor: "latest_loan_status",
+                Cell: ({ value }) => {
+                     const statusText = value || "No Loan";
+                     const badgeColor = getLoanStatusBadgeColor(statusText);
+                     return (
+                         <Badge color={badgeColor} pill className={badgeColor === 'warning' || badgeColor === 'light' ? 'text-dark' : ''}>
+                            {statusText}
+                         </Badge>
+                     );
+                }
+            },
             {
                 Header: "Action",
-                accessor: "action",
+                id: "action_column",
+                disableFilters: true,
+                disableSortBy: true,
                 Cell: ({ row }) => (
-                    <div className="d-flex gap-2"> {/* Added gap for better spacing */}
+                    <div className="d-flex gap-2">
                         <Button
                             color="primary"
-                            size="sm" // Make buttons smaller
-                            className="btn-icon" // For icon-only button style if you have CSS for it
+                            size="sm"
+                            outline
                             onClick={() => handleEditApplicant(row.original)}
-                            title="Edit"
+                            title="Edit Applicant Profile"
                         >
-                            <FeatherIcon icon="edit" size="16" /> {/* Adjust icon size */}
+                            <FeatherIcon icon="edit-2" size="16" />
                         </Button>
                         <Button
-                            color="info" // Changed to info for view
+                            color="info"
                             size="sm"
-                            className="btn-icon"
+                            outline
                             onClick={() => handleViewApplicant(row.original)}
-                            title="View applicant status"
+                            title="View Applicant & Loan Status"
                         >
                             <FeatherIcon icon="eye" size="16" />
                         </Button>
-                        <Button
-                            color="danger"
-                            size="sm"
-                            className="btn-icon"
-                            onClick={() => handleDeleteApplicant(row.original.userID)}
-                            title="Delete" // Added title
-                        >
-                            <FeatherIcon icon="trash-2" size="16" />
-                        </Button>
+                        {!row.original.is_deleted && (
+                         <Button
+                             color="danger"
+                             size="sm"
+                             outline
+                             onClick={() => handleDeleteApplicant(row.original.userID)}
+                             title="Soft-Delete Applicant"
+                         >
+                             <FeatherIcon icon="trash-2" size="16" />
+                         </Button>
+                        )}
                     </div>
                 ),
             },
         ],
-        [navigate] // navigate dependency for handlers that use it
+        [handleEditApplicant, handleViewApplicant, handleDeleteApplicant]
     );
 
-    document.title = "Applicant Management | SPK Finance";
+    useEffect(() => {
+        document.title = "Applicant Management | SPK Finance";
+    }, []);
 
     return (
         <div className="page-content">
             <Container fluid>
-                {/* Breadcrumbs can be added here if needed */}
                 <Row>
                     <Col className="col-12">
                         <Card>
-                            <CardHeader className="d-flex justify-content-between align-items-center">
-                                <h4 className="mb-0">Applicant Management</h4>
-                                <Button color="success" onClick={() => navigate('/applicantform')}> {/* Changed color to success */}
-                                    <FeatherIcon icon="plus-circle" className="me-2" />New Applicant
+                            <CardHeader className="d-flex justify-content-between align-items-center bg-light py-3">
+                                <h4 className="mb-0 card-title">Applicant Management</h4>
+                                <Button color="success" onClick={() => navigate('/applicantform')}>
+                                    <FeatherIcon icon="user-plus" className="me-1" />New Applicant
                                 </Button>
                             </CardHeader>
                             <CardBody>
                                 {isLoading ? (
-                                    <div className="text-center p-4">
-                                        <div className="spinner-border text-primary" role="status">
-                                            <span className="visually-hidden">Loading...</span>
-                                        </div>
+                                    <div className="text-center p-5">
+                                        <Spinner color="primary" style={{ width: '3rem', height: '3rem' }} />
+                                        <p className="mt-2 mb-0">Loading Applicants...</p>
                                     </div>
                                 ) : error ? (
-                                    <div className="alert alert-danger" role="alert">
-                                        {error} {/* Display the error message */}
-                                    </div>
+                                    <Alert color="danger" className="text-center">
+                                        <strong>Error:</strong> {error}
+                                    </Alert>
                                 ) : (
                                     <Table
                                         columns={columns}
                                         data={tableData}
                                         exportPDF={exportPDF}
-                                        // Pass handlers to Table component if they are used inside it, otherwise keep here
                                     />
                                 )}
                             </CardBody>
@@ -460,7 +484,5 @@ function ApplicantListview() {
         </div>
     );
 }
-
-
 
 export default ApplicantListview;
