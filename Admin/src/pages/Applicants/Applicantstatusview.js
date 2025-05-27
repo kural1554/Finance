@@ -12,22 +12,64 @@ import {
   CardBody,
   Alert,
 } from 'reactstrap';
-import { useParams, useNavigate } from "react-router-dom"; // Link import ah neekkalaam, use aagala
+import { useParams, useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import FeatherIcon from "feather-icons-react";
 
+// Helper function to calculate loan summary figures
+const calculateLoanSummary = (currentLoanData) => {
+    let totalPaid = 0;
+    let totalPending = 0;
+    let paidEmis = 0;
+    let totalEmiAmount = 0;
+    let totalPrincipalPaid = 0; 
+
+    const emiSchedule = currentLoanData?.emiSchedule;
+
+    if (!emiSchedule || emiSchedule.length === 0) {
+        return { totalPaid, totalPending, paidEmis, totalEmiAmount, totalPrincipalPaid };
+    }
+
+    emiSchedule.forEach((emi) => {
+      totalPaid += parseFloat(emi.paymentAmount || 0);
+      // Directly use backend provided pendingAmount. This is what Loanpayment.js would save.
+      totalPending += parseFloat(emi.pendingAmount || 0); 
+      totalEmiAmount += parseFloat(emi.emiTotalMonth || 0);
+      // Directly use backend provided principalPaid. This is what Loanpayment.js would save.
+      totalPrincipalPaid += parseFloat(emi.principalPaid || 0); 
+
+      // Paid EMI condition consistent with Loanpayment.js
+      if (
+        emi.paymentAmount &&
+        parseFloat(emi.paymentAmount) > 0 && // Some payment was made for this EMI
+        parseFloat(emi.pendingAmount || 0) === 0 // And the pending amount for this EMI is zero
+      ) {
+        paidEmis++;
+      }
+    });
+
+    return {
+      totalPaid,
+      totalPending, // This can be negative if total overpayment for EMIs > total underpayment
+      paidEmis,
+      totalEmiAmount,
+      totalPrincipalPaid, // This is the sum of 'principalPaid' fields from each emiSchedule item
+    };
+};
+
+
 const Applicantstatusview = () => {
-  const { applicantId } = useParams(); // applicantId is Applicant.userID (e.g., APFAA8D1)
+  const { applicantId } = useParams();
   const navigate = useNavigate();
 
   const [applicantData, setApplicantData] = useState(null);
-  const [loanData, setLoanData] = useState(null); // Can be a loan object or null
+  const [loanData, setLoanData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // --- Helper Functions (Keep these as they are) ---
+  // --- Helper Functions ---
   const getTitle = (value) => {
     const titles = { "1": "Mr.", "2": "Mrs.", "3": "Ms.", "4": "Dr." };
     return titles[String(value)] || value || 'N/A';
@@ -49,32 +91,23 @@ const Applicantstatusview = () => {
     return types[String(value)] || value || 'N/A';
   };
   const getPropertyOwnership = (value) => {
-    const types = { "1": "Owned", "2": "Rented", "3": "Leased" }; // Unga model la 'Mortgaged' irundhuchu
+    const types = { "1": "Owned", "2": "Mortgaged" };
     return types[String(value)] || value || 'N/A';
   };
   const getAccountType = (value) => {
-    const types = { "1": "Savings", "2": "Current", "3": "Fixed Deposit" }; // Unga model la 'Salary Account' um irundhuchu
+    const types = { "1": "Savings Account", "2": "Current Account", "3": "Salary Account", "4": "Fixed Deposit Account" };
     return types[String(value)] || value || 'N/A';
-  };
-  const getTermType = (value) => {
-    const types = { "1": "Days", "2": "Weeks", "3": "Months", "4": "Years" };
-    return types[String(value)] || value || 'N/A';
-  };
-  const getPurpose = (value) => {
-    const purposes = { "1": "Home", "2": "Car", "3": "Education", "4": "Medical", "5": "Personal", "6": "Business" };
-    return purposes[String(value)] || value || 'N/A';
   };
   const getRelationship = (value) => {
     const relationships = { "1": "Spouse", "2": "Parent", "3": "Child", "4": "Sibling", "5": "Other" };
     return relationships[String(value)] || value || 'N/A';
   };
   const getProofType = (value) => {
-    // Idhukku unga ApplicantProof model la irukkura choices ah vechi map pannunga
     const types = {
         'pan': 'PAN Card',
         'aadhar': 'Aadhar Card',
-        'voterId': 'Voter ID',
-        'drivingLicense': 'Driving License',
+        'voterid': 'Voter ID', 
+        'drivinglicense': 'Driving License',
     };
     return types[String(value).toLowerCase()] || String(value) || 'N/A';
   };
@@ -112,9 +145,7 @@ const Applicantstatusview = () => {
     const headers = { 'Authorization': `Bearer ${token}` };
 
     try {
-      // --- Step 1: Applicant Details ah Fetch Pannunga ---
       const applicantApiUrl = `${API_BASE_URL}api/applicants/applicants/${applicantId}/`;
-      console.log("Fetching Applicant from URL:", applicantApiUrl);
       const applicantResponse = await axios.get(applicantApiUrl, { headers });
       const fetchedApplicantData = applicantResponse.data;
       
@@ -123,42 +154,37 @@ const Applicantstatusview = () => {
         employment: Array.isArray(fetchedApplicantData.employment) ? fetchedApplicantData.employment : [],
         properties: Array.isArray(fetchedApplicantData.properties) ? fetchedApplicantData.properties : [],
         banking_details: Array.isArray(fetchedApplicantData.banking_details) ? fetchedApplicantData.banking_details : [],
-        proofs: Array.isArray(fetchedApplicantData.proofs) ? fetchedApplicantData.proofs : []
+        proofs: Array.isArray(fetchedApplicantData.ApplicantProof) ? fetchedApplicantData.ApplicantProof : (Array.isArray(fetchedApplicantData.proofs) ? fetchedApplicantData.proofs : [])
       });
-      console.log("Fetched Applicant Data:", fetchedApplicantData);
 
-      // --- Step 2: Andha Applicant oda ACTIVE Loan ah Fetch Pannunga ---
-      if (applicantId) {
-        const activeLoanApiUrl = `${API_BASE_URL}api/loan-applications/loan-applications/?applicant_record__userID=${applicantId}&status=ACTIVE`;
-        console.log("Fetching ACTIVE loan from URL:", activeLoanApiUrl);
+      if (fetchedApplicantData.userID) { 
+        const latestLoanApiUrl = `${API_BASE_URL}api/loan-applications/loan-applications/?applicant_record__userID=${fetchedApplicantData.userID}&ordering=-LoanRegDate`;
         try {
-            const loanResponse = await axios.get(activeLoanApiUrl, { headers });
-            const activeLoansArray = loanResponse.data;
-            console.log("FILTERED ACTIVE LOAN(S) FROM BACKEND:", JSON.stringify(activeLoansArray, null, 2));
+            const loanResponse = await axios.get(latestLoanApiUrl, { headers });
+            const loansArray = loanResponse.data.results || loanResponse.data; 
 
-            if (Array.isArray(activeLoansArray) && activeLoansArray.length > 0) {
-                const currentActiveLoan = activeLoansArray[0];
-                console.log("SETTING ACTIVE LOAN DATA:", JSON.stringify(currentActiveLoan, null, 2));
+            if (Array.isArray(loansArray) && loansArray.length > 0) {
+                const latestLoan = loansArray[0];
                 setLoanData({
-                    ...currentActiveLoan,
-                    nominees: Array.isArray(currentActiveLoan.nominees) ? currentActiveLoan.nominees : [],
-                    emiSchedule: Array.isArray(currentActiveLoan.emiSchedule) ? currentActiveLoan.emiSchedule : []
+                    ...latestLoan,
+                    nominees: Array.isArray(latestLoan.nominees) ? latestLoan.nominees : [],
+                    emiSchedule: Array.isArray(latestLoan.emiSchedule) ? latestLoan.emiSchedule : []
                 });
             } else {
-                console.log("No ACTIVE loan found for applicant userID:", applicantId);
+                console.log("No loan applications found for applicant userID:", fetchedApplicantData.userID);
                 setLoanData(null);
             }
         } catch (loanFetchError) {
-            console.error("Error fetching ACTIVE loan for applicant:", loanFetchError);
-            if (loanFetchError.response && loanFetchError.response.status === 404) {
-                toast.error(`Error accessing loan data endpoint for applicant ${applicantId}.`);
-            } else {
-                toast.warn(`Could not fetch active loan details for applicant ${applicantId}.`);
+            console.error("Error fetching LATEST loan for applicant:", loanFetchError);
+            // Store the error specific to loan fetching if applicant data was successful
+            if(fetchedApplicantData){ // if applicant data is there, show it, but with loan error
+                setError( prevError => prevError ? `${prevError} Additionally, could not fetch loan details.` : `Could not fetch loan details for applicant ${fetchedApplicantData.userID}.`);
+                toast.warn(`Could not fetch loan details for applicant ${fetchedApplicantData.userID}.`);
+            } else { // if applicant data also failed, this error might be masked by the main catch
+                 setError("Error fetching loan details.");
             }
-            setLoanData(null);
+            setLoanData(null); 
         }
-      } else {
-        setLoanData(null);
       }
     } catch (err) {
       console.error("Error during data fetching (Applicant or Loan):", err);
@@ -191,8 +217,7 @@ const Applicantstatusview = () => {
     }
   }, [applicantId, fetchData]);
 
-  // --- Loading State ---
-  if (loading && !applicantData) { // Initial full page load
+  if (loading && !applicantData) {
     return (
       <div className="page-content d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
         <Spinner color="primary" style={{ width: '3rem', height: '3rem' }}>Loading...</Spinner>
@@ -201,8 +226,7 @@ const Applicantstatusview = () => {
     );
   }
 
-  // --- Error State (If applicantData itself couldn't be fetched) ---
-  if (error && !applicantData) {
+  if (error && !applicantData) { // Only show full page error if applicant data itself fails
     return (
       <div className="page-content">
         <Container fluid>
@@ -222,7 +246,6 @@ const Applicantstatusview = () => {
     );
   }
   
-  // --- No Applicant Data State ---
   if (!loading && !applicantData && !error) {
     return (
       <div className="page-content">
@@ -239,9 +262,8 @@ const Applicantstatusview = () => {
     );
   }
 
-  // --- Reusable UI Components (Keep these as they are) ---
-  const SectionWrapper = ({ title, icon, children, iconColor = "primary" }) => (
-    <Card className="shadow-sm mb-4">
+  const SectionWrapper = ({ title, icon, children, iconColor = "primary", cardClassName = "shadow-sm mb-4" }) => (
+    <Card className={cardClassName}>
       <CardHeader className="bg-light py-3">
         <h4 className="mb-0 card-title d-flex align-items-center">
           {icon && <FeatherIcon icon={icon} className={`me-2 text-${iconColor}`} />}
@@ -265,7 +287,7 @@ const Applicantstatusview = () => {
           <Badge color={badgeColor} pill>{value || 'N/A'}</Badge>
         ) : (
           <p className="fw-bold mb-0">
-            {isCurrency && typeof value === 'number' ? `₹${parseFloat(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            {isCurrency && (value !== null && value !== undefined && !isNaN(parseFloat(value))) ? `₹${parseFloat(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
              : isDate ? formatDate(value)
              : (value || 'N/A')}
           </p>
@@ -273,21 +295,19 @@ const Applicantstatusview = () => {
       </div>
     </Col>
   );
-  // --- End Reusable UI Components ---
 
   return (
     <div className="page-content">
       <Container fluid>
-        {/* General page error (e.g., if loan fetch failed but applicant data exists) */}
-        {error && applicantData && (
-             <Alert color="warning" className="text-center">
+        {/* Display error related to loan fetching here if applicant data loaded */}
+        {error && applicantData && error.includes("loan details") && ( 
+             <Alert color="warning" className="text-center my-3">
                 <FeatherIcon icon="alert-circle" className="me-2" /> {error}
             </Alert>
         )}
 
         {applicantData && (
             <>
-                {/* Back Button and Page Title */}
                 <Row className="mb-4 align-items-center">
                   <Col xs="auto">
                     <Button color="light" onClick={() => navigate(-1)} className="border shadow-sm">
@@ -297,7 +317,7 @@ const Applicantstatusview = () => {
                   </Col>
                   <Col>
                     <h2 className="mb-0 text-primary">
-                      <FeatherIcon icon="file-text" className="me-2" /> Applicant & Loan Overview
+                      <FeatherIcon icon="user-check" className="me-2" /> Applicant Status Overview
                     </h2>
                   </Col>
                   <Col xs="auto">
@@ -310,19 +330,18 @@ const Applicantstatusview = () => {
                             icon={applicantData.is_deleted ? "trash-2" : (applicantData.is_approved ? "check-circle" : "clock")}
                             size="14" className="me-1"
                         />
-                        Status: {applicantData.is_deleted ? "Deleted" : (applicantData.is_approved ? "Approved" : "Pending")}
+                        Applicant: {applicantData.is_deleted ? "Deleted" : (applicantData.is_approved ? "Approved Profile" : "Pending Profile")}
                     </Badge>
                   </Col>
                 </Row>
 
-                {/* Main Summary Card */}
                 <Card className="shadow-lg mb-4 border-0 overflow-hidden">
                   <CardBody className="p-0">
                     <Row className="g-0">
                       <Col md={3} className="text-center bg-light p-4 d-flex flex-column align-items-center justify-content-center border-end">
                         {applicantData.profile_photo ? (
                           <img
-                            src={applicantData.profile_photo} // Assuming this is a full URL
+                            src={applicantData.profile_photo}
                             alt={`${applicantData.first_name} ${applicantData.last_name}`}
                             className="img-fluid rounded-circle shadow-sm mb-3"
                             style={{ width: '130px', height: '130px', objectFit: 'cover', border: '4px solid white' }}
@@ -357,12 +376,10 @@ const Applicantstatusview = () => {
                   </CardBody>
                 </Card>
 
-                {/* Personal & Contact Details */}
                 <SectionWrapper title="Personal & Contact Details" icon="user" iconColor="primary">
                     <Row>
                         <DetailItem label="Applicant ID" value={applicantData.userID} />
                         <DetailItem label="Full Name" value={`${getTitle(applicantData.title)} ${applicantData.first_name || ''} ${applicantData.last_name || ''}`.trim()} />
-                        {/* <DetailItem label="Username (if applicable)" value={applicantData.username} /> */}
                         <DetailItem label="Date of Birth" value={applicantData.dateOfBirth} isDate />
                         <DetailItem label="Gender" value={getGender(applicantData.gender)} />
                         <DetailItem label="Marital Status" value={getMaritalStatus(applicantData.maritalStatus)} />
@@ -377,11 +394,10 @@ const Applicantstatusview = () => {
                     </Row>
                 </SectionWrapper>
 
-                {/* Employment Information */}
                 {applicantData.employment && applicantData.employment.length > 0 && (
                     <SectionWrapper title="Employment Information" icon="briefcase" iconColor="success">
                         {applicantData.employment.map((emp, index) =>(
-                            <div key={index} className={applicantData.employment.length > 1 && index < applicantData.employment.length -1 ? "mb-4 pb-4 border-bottom" : ""}>
+                            <div key={emp.id || index} className={applicantData.employment.length > 1 && index < applicantData.employment.length -1 ? "mb-4 pb-4 border-bottom" : ""}>
                                 {applicantData.employment.length > 1 && <h6 className="text-muted mb-3">Employment Record {index + 1}</h6>}
                                 <Row>
                                     <DetailItem label="Employment Type" value={getEmploymentType(emp.employmentType)} />
@@ -400,11 +416,10 @@ const Applicantstatusview = () => {
                     </SectionWrapper>
                 )}
 
-                {/* Property Details */}
                 {applicantData.properties && applicantData.properties.length > 0 && (
                     <SectionWrapper title="Property Details" icon="home" iconColor="warning">
                         {applicantData.properties.map((prop, index) =>(
-                             <div key={index} className={applicantData.properties.length > 1 && index < applicantData.properties.length -1 ? "mb-4 pb-4 border-bottom" : ""}>
+                             <div key={prop.id || index} className={applicantData.properties.length > 1 && index < applicantData.properties.length -1 ? "mb-4 pb-4 border-bottom" : ""}>
                                 {applicantData.properties.length > 1 && <h6 className="text-muted mb-3">Property {index + 1}</h6>}
                                 <Row>
                                     <DetailItem label="Property Type" value={getPropertyType(prop.propertyType)} />
@@ -419,11 +434,10 @@ const Applicantstatusview = () => {
                     </SectionWrapper>
                 )}
 
-                {/* Banking Information */}
                 {applicantData.banking_details && applicantData.banking_details.length > 0 && (
                     <SectionWrapper title="Banking Information" icon="credit-card" iconColor="info">
                          {applicantData.banking_details.map((bank, index) =>(
-                             <div key={index} className={applicantData.banking_details.length > 1 && index < applicantData.banking_details.length -1 ? "mb-4 pb-4 border-bottom" : ""}>
+                             <div key={bank.id || index} className={applicantData.banking_details.length > 1 && index < applicantData.banking_details.length -1 ? "mb-4 pb-4 border-bottom" : ""}>
                                 {applicantData.banking_details.length > 1 && <h6 className="text-muted mb-3">Bank Account {index + 1}</h6>}
                                 <Row>
                                     <DetailItem label="Account Holder Name" value={bank.accountHolderName} />
@@ -438,7 +452,6 @@ const Applicantstatusview = () => {
                     </SectionWrapper>
                 )}
 
-                {/* Identification Documents */}
                 {applicantData.proofs && applicantData.proofs.length > 0 && (
                     <SectionWrapper title="Identification Documents" icon="shield" iconColor="danger">
                         <Row className="g-3">
@@ -447,10 +460,10 @@ const Applicantstatusview = () => {
                                 <Card className="h-100 shadow-sm border">
                                     <CardBody className="text-center p-3">
                                     <h6 className="text-capitalize text-primary mb-2">{getProofType(proof.type) || proof.type}</h6>
-                                    {(proof.file || proof.document_file_url) ? (
-                                        <a href={proof.document_file_url || proof.file} target="_blank" rel="noopener noreferrer" className="d-block mb-2">
+                                    {proof.file ? (
+                                        <a href={proof.file} target="_blank" rel="noopener noreferrer" className="d-block mb-2">
                                         <img
-                                            src={proof.document_file_url || proof.file} // Assuming this is a full URL
+                                            src={proof.file}
                                             alt={getProofType(proof.type) || proof.type}
                                             className="img-fluid rounded"
                                             style={{maxHeight: '100px', border: '1px solid #eee', objectFit: 'contain'}}
@@ -463,11 +476,11 @@ const Applicantstatusview = () => {
                                         </div>
                                     )}
                                     <p className="mb-1"><small className="text-muted">ID No:</small> <strong>{proof.idNumber || 'N/A'}</strong></p>
-                                    {(proof.file || proof.document_file_url) &&
+                                    {proof.file &&
                                         <Button
                                             color="outline-primary"
                                             size="sm"
-                                            href={proof.document_file_url || proof.file}
+                                            href={proof.file}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="mt-2 w-100"
@@ -486,54 +499,122 @@ const Applicantstatusview = () => {
         )}
 
         {/* --- Loan Related Sections --- */}
-        {/* Loan data load aagum bodhu kaatradhukku (applicantData irundha mattum) */}
-        {loading && applicantData && <div className="text-center my-3"><Spinner size="sm" className="me-2" />Loading loan details...</div>}
+        {loading && applicantData && !loanData && <div className="text-center my-3"><Spinner size="sm" className="me-2" />Loading loan details...</div>}
 
-        {/* Applicant data irundhu, loan data illaati (active loan illaati), error um illaati */}
-        {!loading && applicantData && !loanData && !error && (
-            <SectionWrapper title="Active Loan Status" icon="dollar-sign" iconColor="secondary">
-                <Alert color="info" className="text-center m-0">
-                    <FeatherIcon icon="info" className="me-2" />
-                    No active loan application found for this applicant at the moment.
+        {loanData && (
+            <SectionWrapper title="Loan Application Status" icon="info" iconColor="primary" cardClassName="shadow-lg mt-4 border-info">
+                <Row>
+                    <Col md={12} className="mb-3">
+                        <h5 className="mb-1">Current Loan Status:
+                            <Badge
+                                color={
+                                    loanData.status === 'REJECTED' ? 'danger' :
+                                    loanData.status === 'APPROVED' ? 'success' :
+                                    loanData.status === 'ACTIVE' ? 'success' :
+                                    loanData.status === 'MANAGER_APPROVED' ? 'info' :
+                                    loanData.status === 'PENDING' ? 'warning' :
+                                    'secondary'
+                                }
+                                pill
+                                className={`ms-2 fs-6 ${loanData.status === 'PENDING' ? 'text-dark' : ''}`}
+                            >
+                                {loanData.status ? loanData.status.replace(/_/g, ' ') : 'N/A'}
+                            </Badge>
+                        </h5>
+                        {loanData.loanID && <p className="text-muted mb-0">Loan ID: {loanData.loanID}</p>}
+                    </Col>
+                </Row>
+
+                {loanData.manager_remarks && (
+                    <Row className="mb-3">
+                        <Col>
+                            <strong className="text-muted d-block mb-1">
+                                <FeatherIcon icon="message-square" size={16} className="me-1"/>Manager Remarks:
+                            </strong>
+                            <p className="bg-light p-3 rounded border fst-italic mb-0">{loanData.manager_remarks}</p>
+                        </Col>
+                    </Row>
+                )}
+
+                {loanData.admin_remarks && (
+                    <Row className="mb-3">
+                        <Col>
+                            <strong className="text-muted d-block mb-1">
+                                <FeatherIcon icon="edit" size={16} className="me-1"/>Admin Remarks:
+                            </strong>
+                            <p className="bg-light p-3 rounded border fst-italic mb-0">{loanData.admin_remarks}</p>
+                        </Col>
+                    </Row>
+                )}
+
+                {loanData.status === 'PENDING' && (
+                    <Alert color="warning" className="mt-2">This loan application is currently pending approval.</Alert>
+                )}
+                {loanData.status === 'MANAGER_APPROVED' && !loanData.admin_remarks && (
+                    <Alert color="info" className="mt-2">This loan has been approved by the manager and is awaiting final admin review.</Alert>
+                )}
+                 {loanData.status === 'APPROVED' && (
+                     <Alert color="success" className="mt-2">This loan application has been fully approved.</Alert>
+                )}
+                {loanData.status === 'ACTIVE' && (
+                     <Alert color="success" className="mt-2">This loan is currently active.</Alert>
+                )}
+                {loanData.status === 'REJECTED' && (
+                     <Alert color="danger" className="mt-2">This loan application has been rejected.</Alert>
+                )}
+            </SectionWrapper>
+        )}
+        
+        {!loading && applicantData && !loanData && error && error.includes("Could not fetch loan details") && ( 
+             <SectionWrapper title="Loan Information" icon="dollar-sign" iconColor="secondary">
+                <Alert color="danger" className="text-center m-0">
+                    <FeatherIcon icon="alert-triangle" className="me-2" />
+                    {error}
                 </Alert>
             </SectionWrapper>
         )}
 
-        {/* Loan data sariyaa vandha mattum Loan Summary kaatunga */}
-        {loanData && loanData.loanID && (
-            <SectionWrapper title="Current Active Loan Summary" icon="dollar-sign" iconColor="purple">
+        {!loading && applicantData && !loanData && (!error || !error.includes("Could not fetch loan details")) && (
+            <SectionWrapper title="Loan Information" icon="dollar-sign" iconColor="secondary">
+                <Alert color="info" className="text-center m-0">
+                    <FeatherIcon icon="info" className="me-2" />
+                    No loan applications found for this applicant.
+                </Alert>
+            </SectionWrapper>
+        )}
+
+        {loanData && (
+            <SectionWrapper title={loanData.status === 'ACTIVE' ? "Current Active Loan Summary" : "Loan Application Summary"} icon="dollar-sign" iconColor="purple">
                 <Row>
                     <DetailItem label="Loan ID" value={loanData.loanID} />
                     <DetailItem label="Loan Amount" value={loanData.amount} isCurrency />
-                    <DetailItem label="Term" value={`${loanData.term || ''} ${getTermType(loanData.termType)}`} />
+                    <DetailItem label="Term" value={`${loanData.term || ''} ${loanData.termType || ''}`} />
                     <DetailItem label="Interest Rate" value={loanData.interestRate ? `${loanData.interestRate}%` : 'N/A'} />
-                    <DetailItem label="Purpose of Loan" value={getPurpose(loanData.purpose)} />
+                    <DetailItem label="Purpose of Loan" value={loanData.purpose || 'N/A'} />
                     <DetailItem label="Repayment Source" value={loanData.repaymentSource} />
                     <DetailItem label="Loan Start Date" value={loanData.startDate} isDate />
                     <DetailItem label="Loan Registration Date" value={loanData.LoanRegDate} isDate />
                 </Row>
-                {loanData.remarks && (
+                {loanData.remarks && ( 
                     <Row className="mt-3">
                         <Col>
-                            <small className="text-muted d-block">Remarks/Notes</small>
+                            <small className="text-muted d-block">Application Remarks/Notes</small>
                             <p className="fw-semibold mb-0 bg-light p-3 rounded border">{loanData.remarks}</p>
                         </Col>
                     </Row>
                 )}
-                {/* Agreements and Translator Info - Unga original code la irundha maari ingayum serthukonga */}
             </SectionWrapper>
         )}
 
-        {/* Nominees Section */}
-        {loanData && loanData.loanID && (
-            <SectionWrapper title="Nominee Details (Current Active Loan)" icon="users" iconColor="dark">
+        {loanData && (
+            <SectionWrapper title={loanData.status === 'ACTIVE' ? "Nominee Details (Current Active Loan)" : "Nominee Details (Loan Application)"} icon="users" iconColor="dark">
                 {loanData.nominees && loanData.nominees.length > 0 ? (
                     loanData.nominees.map((nominee, index) => (
                         <Card key={nominee.id || index} className={`mb-3 shadow-none border ${index < loanData.nominees.length - 1 ? "mb-3" : ""}`}>
                             <CardBody>
                                 <Row className="align-items-center">
                                     <Col md={2} className="text-center mb-3 mb-md-0">
-                                        {nominee.profile_photo ? ( // Assuming nominee.profile_photo is a full URL
+                                        {nominee.profile_photo ? (
                                             <img src={nominee.profile_photo} alt={nominee.name} className="img-fluid rounded-circle" style={{width: '80px', height: '80px', objectFit: 'cover'}} onError={(e) => { e.target.src="https://via.placeholder.com/80?text=N"; }}/>
                                         ) : (
                                             <div className="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto" style={{width: '80px', height: '80px'}}>
@@ -576,65 +657,182 @@ const Applicantstatusview = () => {
             </SectionWrapper>
         )}
 
-        {/* EMI Schedule Section */}
-        {loanData && loanData.loanID && (
-             <SectionWrapper title="EMI Payment Schedule (Current Active Loan)" icon="calendar" iconColor="teal">
+       
+       {loanData && (loanData.status === 'ACTIVE' || loanData.status === 'APPROVED') && (
+             <SectionWrapper 
+                title={
+                    loanData.status === 'ACTIVE' 
+                    ? "EMI Payment Schedule & Summary (Active Loan)" 
+                    : "EMI Payment Schedule & Summary (Approved Loan)"
+                } 
+                icon="calendar" 
+                iconColor="teal" 
+             >
                 {loanData.emiSchedule && loanData.emiSchedule.length > 0 ? (
                     <>
                         <div className="table-responsive mb-4">
-                        <Table hover striped responsive className="mb-0">
+                        <Table hover striped responsive className="mb-0 align-middle"> 
                             <thead className="table-light">
                             <tr>
-                                <th>Month</th>
-                                <th>Payment Date</th>
-                                <th className="text-end">EMI Amount</th>
-                                <th className="text-end">Principal</th>
-                                <th className="text-end">Interest</th>
-                                <th className="text-end">Balance</th>
-                                <th className="text-center">Status</th>
-                                <th className="text-end">Pending Amt</th>
+                                <th>EMI No.</th>
+                                <th>Due Date</th>
+                                <th className="text-end">EMI Amount (₹)</th>
+                                <th className="text-end">Interest (₹)</th>
+                                <th className="text-end">Principal (₹)</th>
+                                <th className="text-end">Balance (₹)</th>
+                                <th className="text-end">Pending Amount (₹)</th>
+                                <th className="text-end">Payment Amount (₹)</th> 
                             </tr>
                             </thead>
                             <tbody>
-                            {loanData.emiSchedule.sort((a, b) => a.month - b.month).map((emi, index) => (
-                                <tr key={index}>
-                                <td className="fw-medium">{emi.month}</td>
-                                <td>{formatDate(emi.emiStartDate)}</td>
-                                <td className="text-end">₹{parseFloat(emi.emiTotalMonth || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                                <td className="text-end">₹{parseFloat(emi.principalPaid || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                                <td className="text-end">₹{parseFloat(emi.interest || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                                <td className="text-end fw-semibold">
-                                    <span className={parseFloat(emi.remainingBalance || 0) > 0 ? 'text-danger' : 'text-success'}>
-                                    ₹{parseFloat(emi.remainingBalance || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}
-                                    </span>
-                                </td>
-                                <td className="text-center">
-                                    {parseFloat(emi.paymentAmount || 0) >= parseFloat(emi.emiTotalMonth || 0) ? ( // Full or more payment
-                                        <Badge color="success" pill><FeatherIcon icon="check-circle" size={12} className="me-1"/> Paid</Badge>
-                                    ) : parseFloat(emi.paymentAmount || 0) > 0 ? ( // Partial payment
-                                        <Badge color="primary" pill><FeatherIcon icon="alert-circle" size={12} className="me-1"/> Partially Paid</Badge>
-                                    ) : new Date(emi.emiStartDate) < new Date() ? ( // Overdue
-                                        <Badge color="danger" pill><FeatherIcon icon="alert-triangle" size={12} className="me-1"/> Overdue</Badge>
-                                    ) : ( // Pending
-                                        <Badge color="warning" pill className="text-dark"><FeatherIcon icon="clock" size={12} className="me-1"/> Pending</Badge>
-                                    )}
-                                </td>
-                                <td className="text-end fw-semibold">
-                                    <Badge 
-                                        color={parseFloat(emi.pendingAmount !== undefined ? emi.pendingAmount : (emi.emiTotalMonth || 0)) > 0 ? 'danger-lighten' : 'success-lighten'}
-                                        className={parseFloat(emi.pendingAmount !== undefined ? emi.pendingAmount : (emi.emiTotalMonth || 0)) > 0 ? 'text-danger' : 'text-success'} pill>
-                                    ₹{parseFloat(emi.pendingAmount !== undefined ? emi.pendingAmount : (emi.emiTotalMonth || 0)).toLocaleString('en-IN', {minimumFractionDigits: 2})}
-                                    </Badge>
-                                </td>
+                            {loanData.emiSchedule.sort((a, b) => (a.month || 0) - (b.month || 0)).map((emi, index) => {
+                                
+                                const paymentAmount = parseFloat(emi.paymentAmount || 0);
+                                const emiTotalMonth = parseFloat(emi.emiTotalMonth || 0);
+                                
+                                let pendingAmountValue;
+                                if (emi.pendingAmount !== undefined && emi.pendingAmount !== null && emi.pendingAmount !== "") {
+                                    pendingAmountValue = parseFloat(emi.pendingAmount);
+                                } else {
+                                    pendingAmountValue = Math.max(0, emiTotalMonth - paymentAmount);
+                                }
+                                return (
+                                <tr key={emi.id || index}>
+                                    <td className="fw-medium">{emi.month}</td>
+                                    <td>{formatDate(emi.emiStartDate)}</td>
+                                    <td className="text-end">₹{emiTotalMonth.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                    <td className="text-end">₹{parseFloat(emi.interest || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                    <td className="text-end">₹{parseFloat(emi.principalPaid || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                    <td className="text-end fw-semibold">
+                                        <span className={parseFloat(emi.remainingBalance || 0) > 0 ? 'text-danger' : 'text-success'}>
+                                        ₹{parseFloat(emi.remainingBalance || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                        </span>
+                                    </td>
+                                  
+                                    <td className="text-end fw-semibold">
+                                        <Badge 
+                                            color={pendingAmountValue > 0 ? 'danger-lighten' : (emiTotalMonth > 0 ? 'success-lighten' : 'light')}
+                                            className={pendingAmountValue > 0 ? 'text-danger' : (emiTotalMonth > 0 ? 'text-success' : 'text-muted')} pill>
+                                        ₹{pendingAmountValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                        </Badge>
+                                    </td>
+                                      <td className="text-end">
+                                        ₹{paymentAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                    </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                             </tbody>
                         </Table>
                         </div>
-                        {/* EMI Summary Cards */}
-                        <Row className="g-3">
-                            {/* ... (unga existing EMI Summary Cards JSX) ... */}
-                        </Row>
+                        
+                        {/* PAYMENT SUMMARY SECTION STARTS HERE */}
+                        <div className="mt-4 pt-4 border-top">
+                            <h5 className="mb-3 d-flex align-items-center">
+                                <FeatherIcon icon="bar-chart-2" className="me-2 text-primary" /> Payment Summary
+                            </h5>
+                            <Row className="g-3">
+                            {(() => {
+                                const summary = calculateLoanSummary(loanData);
+                                const formatCurrency = (value) => value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                                return (
+                                <>
+                                    <Col md={4}>
+                                    <div className="p-3 bg-success bg-opacity-10 rounded border border-success">
+                                        <div className="d-flex align-items-center">
+                                        <div className="me-3"> 
+                                            <span className="avatar-title bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style={{width: '40px', height:'40px'}}>
+                                            <FeatherIcon icon="check-circle" size="20" />
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted mb-1">Total Paid</p>
+                                            <h5 className="mb-0 text-success">
+                                            ₹{formatCurrency(summary.totalPaid)}
+                                            </h5>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </Col>
+
+                                    <Col md={4}>
+                                    <div className="p-3 bg-danger bg-opacity-10 rounded border border-danger">
+                                        <div className="d-flex align-items-center">
+                                        <div className="me-3">
+                                            <span className="avatar-title bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style={{width: '40px', height:'40px'}}>
+                                            <FeatherIcon icon="alert-circle" size="20" />
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted mb-1">Total Pending</p>
+                                            <h5 className="mb-0 text-danger">
+                                            ₹{formatCurrency(summary.totalPending)}
+                                            </h5>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </Col>
+
+                                    <Col md={4}>
+                                    <div className="p-3 bg-green bg-opacity-10 rounded border border-primary">
+                                        <div className="d-flex align-items-center">
+                                        <div className="me-3">
+                                            <span className="avatar-title bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{width: '40px', height:'40px'}}>
+                                            <FeatherIcon icon="list" size="20" />
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted mb-1">EMIs Paid</p>
+                                            <h5 className="mb-0 text-primary">
+                                            {summary.paidEmis}
+                                            </h5>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </Col>
+
+                                    <Col md={6}>
+                                    <div className="p-3 bg-info bg-opacity-10 rounded border border-info">
+                                        <div className="d-flex align-items-center">
+                                        <div className="me-3">
+                                            <span className="avatar-title bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style={{width: '40px', height:'40px'}}>
+                                            <FeatherIcon icon="credit-card" size="20" />
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted mb-1">Total EMI Amount</p>
+                                            <h5 className="mb-0 text-info">
+                                            ₹{formatCurrency(summary.totalEmiAmount)}
+                                            </h5>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </Col>
+
+                                    <Col md={6}>
+                                    <div className="p-3 bg-warning bg-opacity-10 rounded border border-warning">
+                                        <div className="d-flex align-items-center">
+                                        <div className="me-3">
+                                            <span className="avatar-title bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style={{width: '40px', height:'40px'}}>
+                                            <FeatherIcon icon="dollar-sign" size="20" />
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted mb-1">Principal Paid</p>
+                                            <h5 className="mb-0 text-warning">
+                                            ₹{formatCurrency(summary.totalPrincipalPaid)}
+                                            </h5>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </Col>
+                                </>
+                                );
+                            })()}
+                            </Row>
+                        </div>
+                        {/* PAYMENT SUMMARY SECTION ENDS HERE */}
                     </>
                 ) : (
                     <p className="text-muted text-center m-0">EMI schedule is not available for this loan.</p>
@@ -642,7 +840,6 @@ const Applicantstatusview = () => {
             </SectionWrapper>
         )}
 
-        {/* Action Buttons */}
         <div className="text-center mt-5 mb-3">
             <Button color="outline-secondary" onClick={() => window.print()} className="me-2 shadow-sm">
                 <FeatherIcon icon="printer" className="me-1" /> Print Page

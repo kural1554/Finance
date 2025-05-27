@@ -12,9 +12,7 @@ import {
   CardHeader,
   CardBody,
   Alert,
-  Input,
-  FormGroup,
-  Label,
+  // Input, FormGroup, Label, // Removed as they are for the action form
 } from "reactstrap";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -22,9 +20,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import FeatherIcon from "feather-icons-react";
 
-// Assuming helper functions are defined here or imported
-// If imported: import { getTitle, getGender, ... } from './path-to-helpers';
-
+// Helper functions (kept in the same file as requested)
 const getTitle = (value) => {
   const titles = { 1: "Mr.", 2: "Mrs.", 3: "Ms.", 4: "Dr." };
   return titles[String(value)] || value || "N/A";
@@ -92,7 +88,7 @@ const getProofTypeDisplay = (value) => {
   const types = {
     pan: "PAN Card",
     aadhar: "Aadhar Card",
-    voterid: "Voter ID", // Ensure consistent casing with your data
+    voterid: "Voter ID",
     drivinglicense: "Driving License",
   };
   return types[String(value).toLowerCase()] || String(value) || "N/A";
@@ -110,10 +106,7 @@ const formatDate = (dateString) => {
   }
 };
 const getLoanStatusBadgeRender = (status) => {
-  // Renamed to avoid conflict with Badge component
-  switch (
-    status ? status.toUpperCase() : "" // Handle undefined status and normalize to uppercase
-  ) {
+  switch (status ? status.toUpperCase() : "") {
     case "PENDING":
       return (
         <Badge color="warning" className="text-dark" pill>
@@ -164,14 +157,13 @@ const getLoanStatusBadgeRender = (status) => {
       );
   }
 };
-
 const formatCurrency = (value) => {
   if (value === null || value === undefined || isNaN(parseFloat(value))) {
-    // Return a default for invalid inputs, e.g., for fields that might be initially null
     return "₹0.00";
   }
   return `₹${parseFloat(value).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
+
 const LoanApplicationDetailAction = () => {
   const { loanApplicationPk } = useParams();
   const [loanData, setLoanData] = useState(null);
@@ -179,26 +171,19 @@ const LoanApplicationDetailAction = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState(null);
-  const [remarks, setRemarks] = useState("");
-  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  // Removed: remarks, isSubmittingAction
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("LoanApplicationDetailAction MOUNTED");
     const roleFromStorage = localStorage.getItem("userRole");
     if (roleFromStorage) {
       setUserRole(roleFromStorage.toLowerCase());
     } else {
       console.warn("User role not found in localStorage.");
     }
-
-    return () => {
-      console.log("LoanApplicationDetailAction UNMOUNTED");
-    };
   }, []);
 
   const fetchData = useCallback(async () => {
-    console.log("fetchData called. loanApplicationPk:", loanApplicationPk);
     if (!loanApplicationPk) {
       setError("Loan Application PK is missing from URL.");
       setLoading(false);
@@ -207,8 +192,8 @@ const LoanApplicationDetailAction = () => {
     }
     setLoading(true);
     setError(null);
-    setLoanData(null); // Reset previous data
-    setApplicantData(null); // Reset previous data
+    setLoanData(null);
+    setApplicantData(null);
 
     const token = localStorage.getItem("accessToken");
     const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -222,10 +207,8 @@ const LoanApplicationDetailAction = () => {
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
-      // 1. Fetch the specific loan application
-      console.log(`Fetching loan details for PK: ${loanApplicationPk}`);
       const loanResponse = await axios.get(
-        `${API_BASE_URL}api/loan-applications/loan-applications/${loanApplicationPk}/`, // Use PK here
+        `${API_BASE_URL}api/loan-applications/loan-applications/${loanApplicationPk}/`,
         { headers }
       );
       const fetchedLoan = loanResponse.data;
@@ -238,16 +221,10 @@ const LoanApplicationDetailAction = () => {
           ? fetchedLoan.emiSchedule
           : [],
       });
-      console.log("Fetched Loan Data:", fetchedLoan);
 
-      // 2. Fetch applicant details using applicant_record (Applicant.userID) from the loan data
       if (fetchedLoan.applicant_record) {
-        // This should be the Applicant's userID
-        console.log(
-          `Fetching applicant details for UserID: ${fetchedLoan.applicant_record}`
-        );
         const applicantResponse = await axios.get(
-          `${API_BASE_URL}api/applicants/applicants/${fetchedLoan.applicant_record}/`, // Use Applicant's userID
+          `${API_BASE_URL}api/applicants/applicants/${fetchedLoan.applicant_record}/`,
           { headers }
         );
         setApplicantData({
@@ -261,17 +238,12 @@ const LoanApplicationDetailAction = () => {
           banking_details: Array.isArray(applicantResponse.data.banking_details)
             ? applicantResponse.data.banking_details
             : [],
-          // Ensure 'ApplicantProof' matches your ApplicantSerializer's related name for proofs
           proofs: Array.isArray(applicantResponse.data.ApplicantProof)
             ? applicantResponse.data.ApplicantProof
             : [],
         });
-        console.log("Fetched Applicant Data:", applicantResponse.data);
       } else {
-        console.warn(
-          "Applicant record ID (userID) not found in loan data. Cannot fetch applicant details."
-        );
-        // Keep loan data, but applicant details will be missing
+        console.warn("Applicant record ID (userID) not found in loan data.");
         setError(
           "Applicant details could not be fetched: ID missing from loan."
         );
@@ -289,58 +261,9 @@ const LoanApplicationDetailAction = () => {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]); // fetchData will re-run if loanApplicationPk changes
+  }, [fetchData]);
 
-  const handleLoanAction = async (newStatus, actionRemarks) => {
-    if (!loanData || !loanData.id) {
-      toast.error("No loan selected or loan ID missing.");
-      return;
-    }
-    if (!userRole) {
-      toast.error("User role not determined. Cannot perform action.");
-      return;
-    }
-    // Remarks are required for any state change by manager/admin
-    if (!actionRemarks.trim() && newStatus !== loanData.status) {
-      toast.warn("Remarks are required to change the loan status.");
-      return;
-    }
-
-    setIsSubmittingAction(true);
-
-    const token = localStorage.getItem("accessToken");
-    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-    const headers = { Authorization: `Bearer ${token}` };
-
-    const payload = { status: newStatus };
-    // Add remarks based on role
-    if (userRole === "manager") payload.manager_remarks = actionRemarks.trim();
-    else if (userRole === "admin") payload.admin_remarks = actionRemarks.trim();
-    // If general remarks field is used, add it too
-    // payload.remarks = remarks.trim(); // If you have a general 'remarks' field updated by current actor
-
-    try {
-      const response = await axios.patch(
-        `${API_BASE_URL}api/loan-applications/loan-applications/${loanData.id}/`, // Use loanData.id (PK)
-        payload,
-        { headers }
-      );
-      toast.success(`Loan application status updated to ${newStatus}.`);
-      setLoanData(response.data); // Update displayed loan with new data from response
-      setRemarks(""); // Clear remarks input
-      // Optionally navigate back or refresh the list from where the user came.
-      // navigate('/loan-approvals'); // Navigate to the queue page
-    } catch (err) {
-      console.error("Error updating loan status:", err.response);
-      const errorDetail =
-        err.response?.data?.error ||
-        err.response?.data?.detail ||
-        "Failed to update loan status.";
-      toast.error(errorDetail);
-    } finally {
-      setIsSubmittingAction(false);
-    }
-  };
+  // Removed: handleLoanAction function
 
   const emiTotals = useMemo(() => {
     if (
@@ -350,19 +273,23 @@ const LoanApplicationDetailAction = () => {
     ) {
       return { totalPayment: 0, totalPrincipal: 0, totalInterest: 0 };
     }
-    const totals = loanData.emiSchedule.reduce(
+    return loanData.emiSchedule.reduce(
       (acc, row) => {
-        acc.totalPayment += parseFloat(row.emiTotalMonth || 0); // Or row.emi, whatever your field is for the EMI amount of that installment
-        acc.totalPrincipal += parseFloat(row.principalPaid || 0);
-        acc.totalInterest += parseFloat(row.interest || 0);
+        acc.totalPayment += parseFloat(
+          row.emiTotalMonth || row.emi_amount || 0
+        );
+        acc.totalPrincipal += parseFloat(
+          row.principalPaid || row.principal_component || 0
+        );
+        acc.totalInterest += parseFloat(
+          row.interest || row.interest_component || 0
+        );
         return acc;
       },
       { totalPayment: 0, totalPrincipal: 0, totalInterest: 0 }
     );
-    return totals;
   }, [loanData]);
 
-  // --- UI Rendering Logic ---
   if (loading) {
     return (
       <div
@@ -376,7 +303,6 @@ const LoanApplicationDetailAction = () => {
   }
 
   if (error && (!loanData || !applicantData)) {
-    // If essential data failed to load
     return (
       <div className="page-content">
         <Container fluid>
@@ -416,7 +342,6 @@ const LoanApplicationDetailAction = () => {
     );
   }
 
-  // --- Reusable UI Components (can be moved to a separate file) ---
   const SectionWrapper = ({
     title,
     icon,
@@ -458,10 +383,8 @@ const LoanApplicationDetailAction = () => {
           getLoanStatusBadgeRender(value)
         ) : (
           <p className="fw-bold mb-0">
-            {isCurrency &&
-            (typeof value === "number" ||
-              (typeof value === "string" && !isNaN(parseFloat(value))))
-              ? `₹${parseFloat(value).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            {isCurrency
+              ? formatCurrency(value)
               : isDate
                 ? formatDate(value)
                 : value || "N/A"}
@@ -470,21 +393,24 @@ const LoanApplicationDetailAction = () => {
       </div>
     </Col>
   );
-  // --- End Reusable UI Components ---
 
-  // Main JSX starts here, using applicantData and loanData states
+  const canTakeAction =
+    loanData &&
+    userRole &&
+    ((userRole === "manager" && loanData.status === "PENDING") ||
+      (userRole === "admin" &&
+        (loanData.status === "MANAGER_APPROVED" ||
+          loanData.status === "PENDING")));
+
   return (
     <div className="page-content">
       <Container fluid>
-        {/* Display general error if it occurred after some data might have loaded */}
         {error && (applicantData || loanData) && (
           <Alert color="warning" className="text-center my-3">
             <FeatherIcon icon="alert-circle" className="me-2" /> {error}
           </Alert>
         )}
 
-        {/* Applicant Details Section - Renders if applicantData is available */}
-        {/* This section and others above "Loan Actions" are uneditable (display-only) */}
         {applicantData ? (
           <>
             <Row className="mb-4 align-items-center">
@@ -536,14 +462,10 @@ const LoanApplicationDetailAction = () => {
                 </Badge>
               </Col>
             </Row>
+
             <Card className="shadow-lg mb-4 border-0 overflow-hidden">
-              {" "}
-              {/* Main Summary Card */}
               <CardBody className="p-0">
-                {" "}
                 <Row className="g-0">
-                  {" "}
-                  {/* ... Content as per your UI ... */}
                   <Col
                     md={3}
                     className="text-center bg-light p-4 d-flex flex-column align-items-center justify-content-center border-end"
@@ -574,8 +496,7 @@ const LoanApplicationDetailAction = () => {
                           border: "4px solid white",
                         }}
                       >
-                        {" "}
-                        <FeatherIcon icon="user" />{" "}
+                        <FeatherIcon icon="user" />
                       </div>
                     )}
                     <h4 className="mb-1">
@@ -620,7 +541,6 @@ const LoanApplicationDetailAction = () => {
                       />
                       <Col md={12} className="mt-2">
                         <small className="text-muted d-block">
-                          {" "}
                           <FeatherIcon
                             icon="map-pin"
                             size="14"
@@ -628,23 +548,19 @@ const LoanApplicationDetailAction = () => {
                           />{" "}
                           Address
                         </small>
-                        <p className="fw-semibold mb-0">
-                          {" "}
-                          {`${applicantData.address || ""}, ${applicantData.city || ""}, ${applicantData.state || ""} - ${applicantData.postalCode || ""}`}{" "}
-                        </p>
+                        <p className="fw-semibold mb-0">{`${applicantData.address || ""}, ${applicantData.city || ""}, ${applicantData.state || ""} - ${applicantData.postalCode || ""}`}</p>
                       </Col>
                     </Row>
                   </Col>
-                </Row>{" "}
+                </Row>
               </CardBody>
             </Card>
+
             <SectionWrapper
               title="Personal & Contact Details"
               icon="user"
               iconColor="primary"
             >
-              {" "}
-              {/* Personal Details */}
               <Row>
                 <DetailItem label="Applicant ID" value={applicantData.userID} />
                 <DetailItem
@@ -677,25 +593,20 @@ const LoanApplicationDetailAction = () => {
                   icon="phone"
                 />
                 <Col md={12}>
-                  {" "}
-                  <small className="text-muted d-block">
-                    Full Address
-                  </small>{" "}
-                  <p className="fw-bold mb-0">
-                    {" "}
-                    {`${applicantData.address || ""}, ${applicantData.city || ""}, ${applicantData.state || ""} - ${applicantData.postalCode || ""}`}{" "}
-                  </p>{" "}
+                  <small className="text-muted d-block">Full Address</small>
+                  <p className="fw-bold mb-0">{`${applicantData.address || ""}, ${applicantData.city || ""}, ${applicantData.state || ""} - ${applicantData.postalCode || ""}`}</p>
                 </Col>
               </Row>
             </SectionWrapper>
-            {/* Employment Information */}
-            {applicantData.employment && applicantData.employment.length > 0 ? (
-              <SectionWrapper
-                title="Employment Information"
-                icon="briefcase"
-                iconColor="success"
-              >
-                {applicantData.employment.map((emp, index) => (
+
+            <SectionWrapper
+              title="Employment Information"
+              icon="briefcase"
+              iconColor="success"
+            >
+              {applicantData.employment &&
+              applicantData.employment.length > 0 ? (
+                applicantData.employment.map((emp, index) => (
                   <div
                     key={emp.id || index}
                     className={
@@ -744,26 +655,20 @@ const LoanApplicationDetailAction = () => {
                       />
                     </Row>
                   </div>
-                ))}
-              </SectionWrapper>
-            ) : (
-              <SectionWrapper
-                title="Employment Information"
-                icon="briefcase"
-                iconColor="success"
-              >
+                ))
+              ) : (
                 <p className="text-muted">No employment details provided.</p>
-              </SectionWrapper>
-            )}
+              )}
+            </SectionWrapper>
 
-            {/* Property Details */}
-            {applicantData.properties && applicantData.properties.length > 0 ? (
-              <SectionWrapper
-                title="Property Details"
-                icon="home"
-                iconColor="warning"
-              >
-                {applicantData.properties.map((prop, index) => (
+            <SectionWrapper
+              title="Property Details"
+              icon="home"
+              iconColor="warning"
+            >
+              {applicantData.properties &&
+              applicantData.properties.length > 0 ? (
+                applicantData.properties.map((prop, index) => (
                   <div
                     key={prop.id || index}
                     className={
@@ -810,27 +715,20 @@ const LoanApplicationDetailAction = () => {
                       )}
                     </Row>
                   </div>
-                ))}
-              </SectionWrapper>
-            ) : (
-              <SectionWrapper
-                title="Property Details"
-                icon="home"
-                iconColor="warning"
-              >
+                ))
+              ) : (
                 <p className="text-muted">No property details provided.</p>
-              </SectionWrapper>
-            )}
+              )}
+            </SectionWrapper>
 
-            {/* Banking Information */}
-            {applicantData.banking_details &&
-            applicantData.banking_details.length > 0 ? (
-              <SectionWrapper
-                title="Banking Information"
-                icon="credit-card"
-                iconColor="info"
-              >
-                {applicantData.banking_details.map((bank, index) => (
+            <SectionWrapper
+              title="Banking Information"
+              icon="credit-card"
+              iconColor="info"
+            >
+              {applicantData.banking_details &&
+              applicantData.banking_details.length > 0 ? (
+                applicantData.banking_details.map((bank, index) => (
                   <div
                     key={bank.id || index}
                     className={
@@ -863,17 +761,11 @@ const LoanApplicationDetailAction = () => {
                       />
                     </Row>
                   </div>
-                ))}
-              </SectionWrapper>
-            ) : (
-              <SectionWrapper
-                title="Banking Information"
-                icon="credit-card"
-                iconColor="info"
-              >
+                ))
+              ) : (
                 <p className="text-muted">No banking details provided.</p>
-              </SectionWrapper>
-            )}
+              )}
+            </SectionWrapper>
           </>
         ) : (
           <Alert color="secondary" className="mt-3">
@@ -881,7 +773,6 @@ const LoanApplicationDetailAction = () => {
           </Alert>
         )}
 
-        {/* Loan Application Details Section - Renders if loanData is available */}
         {loanData && (
           <>
             <SectionWrapper
@@ -959,8 +850,6 @@ const LoanApplicationDetailAction = () => {
                 />
               </Row>
               <Row className="mt-3">
-                {" "}
-                {/* Agreements */}
                 <Col md={4}>
                   <FeatherIcon
                     icon={loanData.agreeTerms ? "check-square" : "square"}
@@ -983,25 +872,22 @@ const LoanApplicationDetailAction = () => {
                   Agreed to Data Sharing
                 </Col>
               </Row>
-              {(loanData.translatorName ||
-                loanData.translatorPlace) /* Translator */ && (
+              {(loanData.translatorName || loanData.translatorPlace) && (
                 <Row className="mt-3 pt-3 border-top">
-                  {" "}
                   <DetailItem
                     label="Translator Name"
                     value={loanData.translatorName}
                     colProps={{ md: 6 }}
-                  />{" "}
+                  />
                   <DetailItem
                     label="Translator Place"
                     value={loanData.translatorPlace}
                     colProps={{ md: 6 }}
-                  />{" "}
+                  />
                 </Row>
               )}
               {loanData.remarks && (
                 <Row className="mt-3 pt-3 border-top">
-                  {" "}
                   <Col>
                     <small className="text-muted">
                       General Remarks (from application):
@@ -1009,34 +895,33 @@ const LoanApplicationDetailAction = () => {
                     <p className="fw-semibold bg-light p-2 rounded border">
                       {loanData.remarks}
                     </p>
-                  </Col>{" "}
+                  </Col>
                 </Row>
               )}
               {loanData.manager_remarks && (
                 <Row className="mt-2">
-                  {" "}
                   <Col>
                     <small className="text-muted">Manager Remarks:</small>
                     <p className="fw-semibold bg-light p-2 rounded border">
                       {loanData.manager_remarks}
                     </p>
-                  </Col>{" "}
+                  </Col>
                 </Row>
               )}
               {loanData.admin_remarks && (
                 <Row className="mt-2">
-                  {" "}
                   <Col>
                     <small className="text-muted">Admin Remarks:</small>
                     <p className="fw-semibold bg-light p-2 rounded border">
                       {loanData.admin_remarks}
                     </p>
-                  </Col>{" "}
+                  </Col>
                 </Row>
               )}
+
+           
             </SectionWrapper>
 
-            {/* Nominees Section */}
             <SectionWrapper
               title="Nominee Details"
               icon="users"
@@ -1048,14 +933,9 @@ const LoanApplicationDetailAction = () => {
                     key={nominee.id || index}
                     className={`mb-3 shadow-none border ${index < loanData.nominees.length - 1 ? "mb-3" : ""}`}
                   >
-                    {" "}
                     <CardBody>
-                      {" "}
-                      {/* ... Nominee details structure ... */}
                       <Row className="align-items-center">
-                        {" "}
                         <Col md={2} className="text-center mb-3 mb-md-0">
-                          {" "}
                           {nominee.profile_photo ? (
                             <img
                               src={nominee.profile_photo}
@@ -1076,57 +956,50 @@ const LoanApplicationDetailAction = () => {
                               className="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto"
                               style={{ width: "80px", height: "80px" }}
                             >
-                              {" "}
                               <FeatherIcon
                                 icon="user"
                                 size="30"
                                 className="text-muted"
-                              />{" "}
+                              />
                             </div>
-                          )}{" "}
-                        </Col>{" "}
+                          )}
+                        </Col>
                         <Col md={10}>
-                          {" "}
                           <h5 className="mb-1 text-primary">
                             {nominee.name || "N/A"}
-                          </h5>{" "}
+                          </h5>
                           <Row>
-                            {" "}
                             <DetailItem
                               label="Relationship"
                               value={getRelationshipDisplay(
                                 nominee.relationship
                               )}
                               colProps={{ md: 6, lg: 3 }}
-                            />{" "}
+                            />
                             <DetailItem
                               label="Phone"
                               value={nominee.phone}
                               colProps={{ md: 6, lg: 3 }}
-                            />{" "}
+                            />
                             <DetailItem
                               label="Email"
                               value={nominee.email}
                               colProps={{ md: 6, lg: 3 }}
-                            />{" "}
+                            />
                             <DetailItem
                               label="ID Proof"
                               value={`${getProofTypeDisplay(nominee.idProofType)}: ${nominee.idProofNumber || ""}`}
                               colProps={{ md: 6, lg: 3 }}
-                            />{" "}
+                            />
                             <Col md={12} className="mt-1">
-                              {" "}
-                              <small className="text-muted">
-                                Address:
-                              </small>{" "}
+                              <small className="text-muted">Address:</small>
                               <p className="fw-semibold small mb-2">
                                 {nominee.address || "N/A"}
-                              </p>{" "}
-                            </Col>{" "}
+                              </p>
+                            </Col>
                             {(nominee.id_proof_file ||
                               nominee.profile_photo) && (
                               <Col md={12} className="mt-1">
-                                {" "}
                                 {nominee.id_proof_file && (
                                   <Button
                                     outline
@@ -1137,15 +1010,14 @@ const LoanApplicationDetailAction = () => {
                                     rel="noopener noreferrer"
                                     className="me-2"
                                   >
-                                    {" "}
                                     <FeatherIcon
                                       icon="file-text"
                                       size={14}
                                       className="me-1"
                                     />{" "}
-                                    View ID File{" "}
+                                    View ID File
                                   </Button>
-                                )}{" "}
+                                )}
                                 {nominee.profile_photo && (
                                   <Button
                                     outline
@@ -1155,21 +1027,20 @@ const LoanApplicationDetailAction = () => {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                   >
-                                    {" "}
                                     <FeatherIcon
                                       icon="image"
                                       size={14}
                                       className="me-1"
                                     />{" "}
-                                    View Nominee Photo{" "}
+                                    View Nominee Photo
                                   </Button>
-                                )}{" "}
+                                )}
                               </Col>
-                            )}{" "}
-                          </Row>{" "}
-                        </Col>{" "}
+                            )}
+                          </Row>
+                        </Col>
                       </Row>
-                    </CardBody>{" "}
+                    </CardBody>
                   </Card>
                 ))
               ) : (
@@ -1179,7 +1050,6 @@ const LoanApplicationDetailAction = () => {
               )}
             </SectionWrapper>
 
-            {/* EMI Schedule Section */}
             <SectionWrapper
               title="EMI Payment Schedule"
               icon="calendar"
@@ -1189,14 +1059,12 @@ const LoanApplicationDetailAction = () => {
                 <>
                   <div className="text-center p-3">
                     <h5>EMI Repayment Schedule</h5>
-                    {loanData.amount &&
-                      loanData.interestRate && ( // Show description if basic loan data exists
-                        <p className="card-title-desc">
-                          Loan of {formatCurrency(loanData.amount)} at{" "}
-                          {loanData.interestRate}% interest per annum.
-                          {/* Add diminishing/flat rate if available: {loanData.interestType === 'DIMINISHING' ? '(Diminishing)' : '(Flat Rate)'} */}
-                        </p>
-                      )}
+                    {loanData.amount && loanData.interestRate && (
+                      <p className="card-title-desc">
+                        Loan of {formatCurrency(loanData.amount)} at{" "}
+                        {loanData.interestRate}% interest per annum.
+                      </p>
+                    )}
                   </div>
                   <div
                     className="table-responsive mb-4"
@@ -1222,7 +1090,7 @@ const LoanApplicationDetailAction = () => {
                             (a, b) =>
                               (a.month || a.installment_number || 0) -
                               (b.month || b.installment_number || 0)
-                          ) // Sort by month/installment
+                          )
                           .map((emi, index) => (
                             <tr key={emi.id || index}>
                               <td>
@@ -1251,11 +1119,9 @@ const LoanApplicationDetailAction = () => {
                               <td className="text-end">
                                 {formatCurrency(emi.remainingBalance)}
                               </td>
-                              {/* Render other EMI fields if they exist */}
                             </tr>
                           ))}
                       </tbody>
-                      {/* Totals Row - if emiTotals are calculated */}
                       {(emiTotals.totalPayment > 0 ||
                         emiTotals.totalPrincipal > 0 ||
                         emiTotals.totalInterest > 0) && (
@@ -1279,8 +1145,6 @@ const LoanApplicationDetailAction = () => {
                       )}
                     </Table>
                   </div>
-
-                  {/* Summary Card for EMI Totals */}
                   <Card className="bg-light mt-3">
                     <CardBody>
                       <Row>
@@ -1292,7 +1156,6 @@ const LoanApplicationDetailAction = () => {
                           <h5 className="text-primary mb-0">
                             {formatCurrency(loanData.amount)}
                           </h5>
-                          {/* Or use emiTotals.totalPrincipal if more accurate from schedule */}
                         </Col>
                         <Col
                           md={4}
@@ -1324,177 +1187,35 @@ const LoanApplicationDetailAction = () => {
               )}
             </SectionWrapper>
 
-            {/* Action Section for Manager/Admin */}
-            {/* This section is conditionally editable based on role and loan status */}
-            {loanData && (userRole === "manager" || userRole === "admin") && (
-                
-              <SectionWrapper
-                title="Loan Actions"
-                icon="tool"
-                iconColor="primary"
-                cardClassName="shadow-sm my-4"
-              >
-                {/* 
-                  The "bracket" condition:
-                  This block determines if the remarks input and action buttons are rendered.
-                  If true, user can input remarks and perform actions.
-                  If false, "No actions available..." message is shown.
-                */}
-                {(userRole === "manager" && loanData.status === "PENDING") ||
-                (userRole === "admin" &&
-                  (loanData.status === "MANAGER_APPROVED" ||
-                    loanData.status === "PENDING")) ? (
-                  <>
-                    <FormGroup>
-                      <Label for="actionRemarksInput" className="fw-bold">
-                        {userRole === "manager"
-                          ? "Manager Remarks:"
-                          : "Admin Remarks:"}
-                      </Label>
-                      <Input
-                        type="textarea"
-                        name="remarks"
-                        id="actionRemarksInput"
-                        value={remarks}
-                        onChange={(e) => setRemarks(e.target.value)}
-                        rows="4" // Increased rows for better visibility
-                        placeholder={`Enter ${userRole === "manager" ? "manager" : "admin"} remarks for this action... (Required for status change)`}
-                        disabled={isSubmittingAction}
-                        className="mb-3"
-                        style={{ color: "#212529" }} // Add some margin below the input
-                      />
-                    </FormGroup>
-
-                    <div className="d-flex justify-content-end mt-3">
-                      {userRole === "manager" &&
-                        loanData.status === "PENDING" && (
-                          <>
-                            <Button
-                              color="success"
-                              className="me-2"
-                              onClick={() =>
-                                handleLoanAction("MANAGER_APPROVED", remarks)
-                              }
-                              disabled={isSubmittingAction || !remarks.trim()}
-                            >
-                              {isSubmittingAction ? (
-                                <Spinner size="sm" />
-                              ) : (
-                                <>
-                                  <FeatherIcon
-                                    icon="check-circle"
-                                    size={16}
-                                    className="me-1"
-                                  />
-                                  Approve (Mgr)
-                                </>
-                              )}
-                            </Button>
-                            <Button
-                              color="danger"
-                              onClick={() =>
-                                handleLoanAction("REJECTED", remarks)
-                              }
-                              disabled={isSubmittingAction || !remarks.trim()}
-                            >
-                              {isSubmittingAction ? (
-                                <Spinner size="sm" />
-                              ) : (
-                                <>
-                                  <FeatherIcon
-                                    icon="x-circle"
-                                    size={16}
-                                    className="me-1"
-                                  />
-                                  Reject
-                                </>
-                              )}
-                            </Button>
-                          </>
-                        )}
-
-                      {userRole === "admin" &&
-                        loanData.status === "MANAGER_APPROVED" && (
-                          <>
-                            <Button
-                              color="success"
-                              className="me-2"
-                              onClick={() =>
-                                handleLoanAction("APPROVED", remarks)
-                              }
-                              disabled={isSubmittingAction || !remarks.trim()}
-                            >
-                              {isSubmittingAction ? (
-                                <Spinner size="sm" />
-                              ) : (
-                                <>
-                                  <FeatherIcon
-                                    icon="award"
-                                    size={16}
-                                    className="me-1"
-                                  />
-                                  Final Approve
-                                </>
-                              )}
-                            </Button>
-                            <Button
-                              color="danger"
-                              onClick={() =>
-                                handleLoanAction("REJECTED", remarks)
-                              }
-                              disabled={isSubmittingAction || !remarks.trim()}
-                            >
-                              {isSubmittingAction ? (
-                                <Spinner size="sm" />
-                              ) : (
-                                <>
-                                  <FeatherIcon
-                                    icon="x-circle"
-                                    size={16}
-                                    className="me-1"
-                                  />
-                                  Reject
-                                </>
-                              )}
-                            </Button>
-                          </>
-                        )}
-
-                      {userRole === "admin" &&
-                        loanData.status === "PENDING" && (
-                          <Button
-                            color="danger"
-                            onClick={() =>
-                              handleLoanAction("REJECTED", remarks)
-                            }
-                            disabled={isSubmittingAction || !remarks.trim()}
-                            className="ms-auto"
-                          >
-                            {isSubmittingAction ? (
-                              <Spinner size="sm" />
-                            ) : (
-                              <>
-                                <FeatherIcon
-                                  icon="x-circle"
-                                  size={16}
-                                  className="me-1"
-                                />
-                                Reject (Admin)
-                              </>
-                            )}
-                          </Button>
-                        )}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-muted text-center m-0">
-                    No actions available for this loan application's current
-                    status ({loanData.status}) by your role, or remarks already
-                    submitted.
-                  </p>
-                )}
-              </SectionWrapper>
-            )}
+           {canTakeAction && (
+                <Row className="mt-4 pt-3 border-top">
+                  <Col className="text-center">
+                    <Button
+                      color="primary"
+                      size="lg"
+                      onClick={() =>
+                        navigate(
+                           `/loan-application/action/loanRemark/${loanApplicationPk}/` // UPDATED PATH
+                        )
+                      }
+                      className="shadow"
+                    >
+                      <FeatherIcon icon="edit-3" className="me-2" /> {/* Changed icon for nuance */}
+                      Add Remarks & Decide Action {/* UPDATED TEXT */}
+                    </Button>
+                  </Col>
+                </Row>
+              )}
+              {!canTakeAction && loanData && (userRole === "manager" || userRole === "admin") && (
+                 <Row className="mt-4 pt-3 border-top">
+                    <Col>
+                        <p className="text-muted text-center m-0">
+                            No further actions available for this loan application's current
+                            status ({getLoanStatusBadgeRender(loanData.status)}) by your role, or action has already been taken.
+                        </p>
+                    </Col>
+                 </Row>
+              )}
           </>
         )}
 
@@ -1508,10 +1229,10 @@ const LoanApplicationDetailAction = () => {
           </Button>
           <Button
             color="primary"
-            onClick={() => navigate(-1)} // Or navigate to a specific queue page
+            onClick={() => navigate(-1)} // Or navigate('/loan-approvals') for a specific queue page
             className="shadow-sm"
           >
-            <FeatherIcon icon="arrow-left" className="me-1" /> Back to Queue
+            <FeatherIcon icon="arrow-left" className="me-1" /> Back to Previous Page
           </Button>
         </div>
       </Container>

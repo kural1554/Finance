@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Container, Row, Col, Card, CardBody, CardHeader,
-  Form, FormGroup, Label, Input, Button, Spinner, FormText, Table // <<< IMPORT Table
+  Form, FormGroup, Label, Input, Button, Spinner, FormText, Table,FormFeedback 
 } from "reactstrap";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -39,10 +39,12 @@ const EmployeeEdit = () => {
     joining_date: "",
     leaving_date: "",
     employee_photo: null,
+    password: "",
+    confirmPassword: "",
   };
   const [formData, setFormData] = useState(initialFormData);
   const [initialPhotoUrl, setInitialPhotoUrl] = useState(null);
-
+  const [formErrors, setFormErrors] = useState({}); 
   // --- STATE FOR DOCUMENTS ---
   const [existingDocuments, setExistingDocuments] = useState([]); // Docs fetched from backend
   const [newlyAddedDocuments, setNewlyAddedDocuments] = useState([]); // Docs added via DocumentUpload in this session
@@ -78,6 +80,8 @@ const EmployeeEdit = () => {
         joining_date: employeeData.joining_date || "",
         leaving_date: employeeData.leaving_date || "",
         employee_photo: null,
+        password: "", 
+        confirmPassword: "",
       });
       setInitialPhotoUrl(employeeData.employee_photo || null);
       setExistingDocuments(employeeData.id_proofs || []); // Assumes backend sends 'id_proofs'
@@ -150,7 +154,7 @@ const EmployeeEdit = () => {
     setNewlyAddedDocuments(docs);
   }, []);
 
-  // --- FUNCTION TO MARK EXISTING DOCUMENT FOR DELETION ---
+  
   const handleDeleteExistingDocument = (docId) => {
     // Optimistically remove from UI and add to delete list
     setExistingDocuments(prev => prev.filter(doc => doc.id !== docId));
@@ -167,6 +171,26 @@ const EmployeeEdit = () => {
         return;
     }
     setIsSubmitting(true);
+    setFormErrors({});
+
+      // --- Client-side password validation ---
+    const newFormErrors = {};
+    if (formData.password || formData.confirmPassword) { // Only validate if user typed in password fields
+        if (!formData.password) {
+            newFormErrors.password = "Password is required if you intend to change it.";
+        } else if (formData.password.length < 8) { // Example: min length
+            newFormErrors.password = "Password must be at least 8 characters long.";
+        }
+        if (formData.password !== formData.confirmPassword) {
+            newFormErrors.confirmPassword = "Passwords do not match.";
+        }
+    }
+    if (Object.keys(newFormErrors).length > 0) {
+        setFormErrors(newFormErrors);
+        toast.error("Please correct the form errors.");
+        setIsSubmitting(false);
+        return;
+    }
 
     const dataForSerializer = {
       email: formData.email,
@@ -202,7 +226,11 @@ const EmployeeEdit = () => {
     // else if (formData.employee_photo === null && initialPhotoUrl !== null) { // Check if it was cleared
     //    payload.append("employee_photo", ""); // Or null, depending on backend
     // }
-
+     // --- Append NEW PASSWORD if provided ---
+    if (formData.password && formData.password.trim() !== "") {
+        payload.append("password", formData.password);
+        payload.append("confirm_password", formData.confirmPassword);
+    }
 
     // --- APPEND NEW DOCUMENTS ---
     newlyAddedDocuments.forEach((doc, index) => {
@@ -231,9 +259,28 @@ const EmployeeEdit = () => {
         toast.success("Employee updated successfully!");
         navigate("/employeelistpage");
     } catch (submitError) {
-        // ... (your existing error handling) ...
-        // Potentially revert optimistic UI changes for document deletion if needed
-        // For example, re-fetch employee data or merge back deleted documents
+        console.error("Update failed:", submitError);
+        const errorData = submitError.response?.data;
+        let errorMessage = "Update failed. Please check the form for errors.";
+
+        if (errorData) {
+            if (typeof errorData === 'string') {
+                errorMessage = errorData;
+            } else if (errorData.errors && typeof errorData.errors === 'object') {
+                const backendErrors = {};
+                for (const key in errorData.errors) {
+                    // Map backend field names to frontend state names if different
+                    const frontendKey = key === "confirm_password" ? "confirmPassword" : key;
+                    backendErrors[frontendKey] = Array.isArray(errorData.errors[key]) ? errorData.errors[key].join(" ") : errorData.errors[key];
+                }
+                setFormErrors(backendErrors);
+                // Focus on the first field with an error if possible
+            } else if (errorData.detail) {
+                errorMessage = errorData.detail;
+            } else if (errorData.error) { // General error message
+                errorMessage = errorData.error;
+            }
+        }
         toast.error("Update failed. Please check errors.");
     } finally {
         setIsSubmitting(false);
@@ -287,6 +334,36 @@ const EmployeeEdit = () => {
                         <Input id="leaving_date" type="date" name="leaving_date" value={formData.leaving_date} onChange={handleInputChange} />
                         <FormText color="muted">Setting a leaving date marks the employee as inactive.</FormText>
                       </FormGroup>
+                        {/* --- NEW PASSWORD SECTION --- */}
+                      <hr className="my-4" />
+                      <h6>Change Password (Optional)</h6>
+                       <FormGroup>
+                        <Label htmlFor="password">New Password</Label>
+                        <Input
+                            id="password"
+                            type="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            placeholder="Leave blank to keep current password"
+                            invalid={!!formErrors.password}
+                        />
+                        {formErrors.password && <FormFeedback>{formErrors.password}</FormFeedback>}
+                        </FormGroup>
+                        <FormGroup>
+                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                        <Input
+                            id="confirmPassword"
+                            type="password"
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleInputChange}
+                            placeholder="Confirm new password"
+                            invalid={!!formErrors.confirmPassword}
+                        />
+                        {formErrors.confirmPassword && <FormFeedback>{formErrors.confirmPassword}</FormFeedback>}
+                        </FormGroup>
+                      {/* --- END NEW PASSWORD SECTION --- */}
                     </Col>
 
                     {/* Right column */}

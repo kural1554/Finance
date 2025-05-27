@@ -91,10 +91,9 @@ import ChartjsChart from "../pages/Charts/ChartjsChart";
 //LoanProcess
 import LoanProcess from "../pages/LoanProcess/LoanProcess";
 //ApprovalStatus
-import ApprovalStatus from "../pages/ApprovalStatus/ApprovalStatus";
 import LoanApplicationDetailAction from "../pages/LoanApprovals/LoanApplicationDetailAction";
 import LoanApprovals from "../pages/LoanApprovals/LoanApprovals";
-
+import LoanRemark from "../pages/LoanApprovals/LoanRemark";
 
 // Maps
 import MapsGoogle from "../pages/Maps/MapsGoogle";
@@ -150,11 +149,11 @@ const userRoutes = [
   { path: "/contacts-grid", component: <ContactsGrid /> },
   { path: "/contacts-list", component: <ContactsList /> },
   { path: "/contacts-profile", component: <ContactsProfile /> },
-  //ApprovalStatus
-  { path: "/approval-status", component: <ApprovalStatus /> },
+
   //Loan Approvals
    { path: "/loan-approvals", component: <LoanApprovals /> },
    { path: "/loan-application/action/:loanApplicationPk", component: <LoanApplicationDetailAction /> },
+  {path: "/loan-application/action/loanRemark/:loanApplicationPk/", component:<LoanRemark />},
   //LoanProcess
   { path: "/loan-process", component: <LoanProcess /> },
 
