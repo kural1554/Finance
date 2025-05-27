@@ -3,6 +3,7 @@ from decimal import Decimal
 from rest_framework import serializers
 from .models import Applicant, ApplicantProof, EmploymentDetails, PropertyDetails, BankingDetails
 from django.db import transaction, IntegrityError
+from loanapp.models import LoanApplication
 import logging
 
 logger = logging.getLogger(__name__)
@@ -124,6 +125,8 @@ class ApplicantSerializer(serializers.ModelSerializer):
     properties = PropertyDetailsSerializer(many=True, required=False)
     banking_details = BankingDetailsSerializer(many=True, required=False)
     profile_photo = serializers.ImageField(required=False, allow_null=True)
+    latest_loan_status = serializers.SerializerMethodField()
+    latest_loan_id = serializers.SerializerMethodField(required=False, allow_null=True)
 
     NESTED_HANDLERS_CONFIG = {
        'proofs': {'model_related_name': 'ApplicantProof', 'child_serializer_class': ApplicantProofSerializer},
@@ -143,6 +146,15 @@ class ApplicantSerializer(serializers.ModelSerializer):
             'is_deleted': {'read_only': True},
             'is_approved': {'read_only': True},
         }
+
+    def get_latest_loan_status(self, obj):
+        # obj is the Applicant instance
+        latest_loan = LoanApplication.objects.filter(applicant_record=obj).order_by('-LoanRegDate', '-id').first()
+        return latest_loan.get_status_display() if latest_loan else "No Loan" # Or latest_loan.status if you want the raw key
+
+    def get_latest_loan_id(self, obj):
+        latest_loan = LoanApplication.objects.filter(applicant_record=obj).order_by('-LoanRegDate', '-id').first()
+        return latest_loan.loanID if latest_loan else None
 
     def _parse_nested_data(self, data, serializer_field_name, form_base_key):
         """Helper to parse fieldName[index][nestedFieldName] from QueryDict."""

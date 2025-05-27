@@ -10,7 +10,7 @@ const PageRegister = () => {
 
     let year = new Date().getFullYear();
     //meta title
-    document.title = "Register | Minia - React Admin & Dashboard Template";
+    document.title = "Register | SPK ";
     return (
         <React.Fragment>
             <div className="auth-page">

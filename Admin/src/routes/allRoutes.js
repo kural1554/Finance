@@ -1,19 +1,20 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
+import Authmiddleware from "./middleware/Authmiddleware";
 //Dashboard
 import Dashboard from "../pages/Dashboard/index";
 //Loan Payment
 import LoanPayment from "../pages/LoanPayment/Payment";
-// Cashflow 
+// Cashflow
 import Cashflow from "../pages/Cashflow/Cashflow";
 // Calendar
 import Calendar from "../pages/Calendar/index";
 //UserForm
 import UserForm from "../pages/UserForm/UserForm";
 //Chat
-import Chat from "../pages/Chat/Chat";
-import Status from "../pages/Chat/status";
-import LoanApplicationView from "../pages/Chat/status";
+// import Chat from "../pages/Applicants/ApplicantListview";
+//import Status from "../pages/Chat/status";
+
 //Calculator
 import EmiCalculater from "../pages/Calculator/EmiCalculater";
 
@@ -67,12 +68,21 @@ import AdvancedPlugins from "../pages/Forms/AdvancedPlugins";
 import FormEditors from "../pages/Forms/FormEditors";
 import FormUpload from "../pages/Forms/FormUpload";
 import FormWizard from "../pages/Forms/FormWizard";
-import Loanform from "../pages/Forms/FormWizard/loanform";
-import FormMask from "../pages/Forms/FormMask";
-import EmployeeRegForm from "../pages/Forms/EmployeeForm/EmployeeRegForm"
-import EmployeeListPage from "../pages/Forms/EmployeeForm/EmployeeListPage"
-import EmployeeEdit from "../pages/Forms/EmployeeForm/EmployeeEdit"
 
+import FormMask from "../pages/Forms/FormMask";
+
+//Applicants
+
+import ApplicantEdit  from "../pages/Applicants/ApplicantEdit";
+import ApplicantListview from "../pages/Applicants/ApplicantListview";
+import Applicantstatusview from "../pages/Applicants/Applicantstatusview";
+import ApplicantForm from "../pages/Applicants/ApplicantForm";
+
+//Employee
+import EmployeeRegForm from "../pages/EmployeeForm/EmployeeRegForm";
+import EmployeeListPage from "../pages/EmployeeForm/EmployeeListPage";
+import EmployeeEdit from "../pages/EmployeeForm/EmployeeEdit";
+import EmployeeStatusView from "../pages/EmployeeForm/EmployeeStatusView";
 
 //Charts
 import Apexchart from "../pages/Charts/Apexcharts";
@@ -82,9 +92,9 @@ import ChartjsChart from "../pages/Charts/ChartjsChart";
 import LoanProcess from "../pages/LoanProcess/LoanProcess";
 //ApprovalStatus
 import ApprovalStatus from "../pages/ApprovalStatus/ApprovalStatus";
-//LoanApplicantEdit
+import LoanApplicationDetailAction from "../pages/LoanApprovals/LoanApplicationDetailAction";
+import LoanApprovals from "../pages/LoanApprovals/LoanApprovals";
 
-import LoanApplicantEdit from "../pages/Chat/LoanApplicantEdit";
 
 // Maps
 import MapsGoogle from "../pages/Maps/MapsGoogle";
@@ -110,7 +120,7 @@ import UserProfile from "../pages/Authentication/user-profile";
 import RangeSlider from "../pages/Extended/RangeSlider/Index";
 import { components } from "react-select";
 
-import OutStanding from "../pages/Outstanding/OutStanding"
+import OutStanding from "../pages/Outstanding/OutStanding";
 const userRoutes = [
   //dashboard
   { path: "/dashboard", component: <Dashboard /> },
@@ -124,26 +134,29 @@ const userRoutes = [
 
   //Calendar
   { path: "/apps-calendar", component: <Calendar /> },
-//LoanAppicantEdit 
-
-{ path: "/LoanApplicantEdit", component: <LoanApplicantEdit /> },
+  //Appicant
+{ path: "/applicantform", component: <ApplicantForm /> },
+{ path: "/applicantlist", component: <ApplicantListview /> },
+{ path: "/applicantstatus/:applicantId", component: <Applicantstatusview /> },
+{ path: "/applicantEdit", component: <ApplicantEdit /> },
   //Chat
-  { path: "/apps-chat", component: <Chat /> },
-  { path: "/status/:applicantId", component: <LoanApplicationView /> },
+  // { path: "/apps-chat", component: <Chat /> },
+ 
   //Calendar
   { path: "/emi-calculator", component: <EmiCalculater /> },
- //Outstanding
+  //Outstanding
   { path: "/outstanding", component: <OutStanding /> },
   //Contact
   { path: "/contacts-grid", component: <ContactsGrid /> },
   { path: "/contacts-list", component: <ContactsList /> },
   { path: "/contacts-profile", component: <ContactsProfile /> },
-//ApprovalStatus
-{path:"/approval-status",component:<ApprovalStatus/>},
-
-//LoanProcess
-{path:"/loan-process",component:<LoanProcess/>},
- 
+  //ApprovalStatus
+  { path: "/approval-status", component: <ApprovalStatus /> },
+  //Loan Approvals
+   { path: "/loan-approvals", component: <LoanApprovals /> },
+   { path: "/loan-application/action/:loanApplicationPk", component: <LoanApplicationDetailAction /> },
+  //LoanProcess
+  { path: "/loan-process", component: <LoanProcess /> },
 
   //Utility
   { path: "/pages-starter", component: <PagesStarter /> },
@@ -183,25 +196,25 @@ const userRoutes = [
   { path: "/form-validation", component: <FormValidation /> },
   { path: "/form-advanced", component: <AdvancedPlugins /> },
   { path: "/form-uploads", component: <FormUpload /> },
-  { path: "/loanform", component: <Loanform/> },
-  { path: "/employeeregform", component: <EmployeeRegForm/> },
-  { path: "/employeelistpage", component: <EmployeeListPage/> },
-  {path:"/employeeedit/:employeeID", component: <EmployeeEdit/>},
+ 
+  //Employee
+  { path: "/employeeregform", component: <EmployeeRegForm /> },
+  { path: "/employeelistpage", component: <EmployeeListPage /> },
+  { path: "/employee/edit/:employee_id",component:<EmployeeEdit />},
+  { path: "/employee/details/:employeePk", component: <EmployeeStatusView /> },
 
-  
   // { path: "/form-wizard", component: <FormWizard /> },
   { path: "/form-mask", component: <FormMask /> },
 
-// LoanRequest
-{ path: "/LoanRequest", component: <LoanRequest /> },
-//UserForm
-{ path: "/UserForm", component: <UserForm /> },
+  // LoanRequest
+  { path: "/LoanRequest", component: <LoanRequest /> },
+  //UserForm
+  { path: "/UserForm", component: <UserForm /> },
 
   //Charts
   { path: "/charts-apex", component: <Apexchart /> },
   { path: "/charts-echart", component: <EChart /> },
   { path: "/charts-chartjs", component: <ChartjsChart /> },
-
 
   // Maps
   { path: "/maps-google", component: <MapsGoogle /> },
@@ -225,10 +238,10 @@ const authRoutes = [
   { path: "/page-recoverpw", component: <RecoverPassword /> },
   { path: "/page-lock-screen", component: <LockScreen /> },
   { path: "/page-confirm-mail", component: <ConfirmMail /> },
-  
+
   { path: "/page-two-step-verification", component: <TwoStepVerfication /> },
   { path: "/page-logout", component: <AuthLogout /> },
-
+  
   //Utility page
   { path: "/pages-maintenance", component: <PageMaintenance /> },
   { path: "/pages-comingsoon", component: <PagesComingsoon /> },
