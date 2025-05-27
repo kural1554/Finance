@@ -125,7 +125,7 @@ SECRET_KEY = 'django-insecure-w+4nu=mgp&unb8!gfsgzo=3bjug&gw+2u2@r6!nff^)=dz2y!q
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['spk.finance.spk-listing.com']
+ALLOWED_HOSTS = []
 
 
 # Application definition
