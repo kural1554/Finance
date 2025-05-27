@@ -1,11 +1,12 @@
 
 from django.db import models,connection
-# from django.utils import timezone # Consider for date/time fields if default values are needed
+from django.conf import settings
+from django.utils import timezone 
 
 
 
 class LoanApplication(models.Model):
-    # loanID is good, using default for generation is also good.
+   
     loanID = models.CharField(max_length=10, unique=True, blank=True ,null=True, editable=False)
     
     applicant_record = models.ForeignKey(
@@ -24,15 +25,11 @@ class LoanApplication(models.Model):
     interestRate = models.FloatField() # For financial data, DecimalField is often preferred for precision over FloatField
     purpose = models.CharField(max_length=100)
     repaymentSource = models.CharField(max_length=100)
-    
-    # Boolean fields
     agreeTerms = models.BooleanField(default=False)
     agreeCreditCheck = models.BooleanField(default=False)
     agreeDataSharing = models.BooleanField(default=False)
-    
     translatorName = models.CharField(max_length=100, blank=True, null=True) # Often translators are optional
     translatorPlace = models.CharField(max_length=100, blank=True, null=True) # Often translators are optional
-    
     LoanRegDate = models.DateField(auto_now_add=True) 
     remarks = models.TextField(blank=True, null=True)
     startDate = models.DateField(null=True, blank=True) # When the loan actually starts
@@ -55,9 +52,10 @@ class LoanApplication(models.Model):
     )
     manager_remarks = models.TextField(blank=True, null=True)
     admin_remarks = models.TextField(blank=True, null=True)
-     # -- Loan ID Generation Function (Helper) --
+    
+    
     def _generate_loan_id(self):
-        """Generates a unique SPK loan ID if one doesn't exist."""
+       
         if not self.loanID: # loanID illaati mattum generate pannu
             prefix = "SPK"
             
@@ -130,7 +128,7 @@ class EMISchedule(models.Model):
     loan_application = models.ForeignKey(LoanApplication, related_name='emiSchedule', on_delete=models.CASCADE)
     month = models.IntegerField() # Or DateField for the specific month/year
     emiStartDate = models.DateField()
-    emiTotalMonth = models.IntegerField() 
+    emiTotalMonth = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     interest = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     principalPaid = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     remainingBalance = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
@@ -138,5 +136,15 @@ class EMISchedule(models.Model):
     # Payment fields
     paymentAmount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     pendingAmount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0) 
+    payment_processed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='processed_emis'
+    )
+    payment_processed_at = models.DateTimeField(null=True, blank=True)
+    
     def __str__(self):
-        return f"EMI {self.month} for {self.loan_application.loanID}" 
+        processed_by_info = f" (Processed by: {self.payment_processed_by.username})" if self.payment_processed_by else ""
+        return f"EMI {self.month} for {self.loan_application.loanID}{processed_by_info}"

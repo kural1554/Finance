@@ -125,7 +125,7 @@ SECRET_KEY = 'django-insecure-w+4nu=mgp&unb8!gfsgzo=3bjug&gw+2u2@r6!nff^)=dz2y!q
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['spk.finance.spk-listing.com']
 
 
 # Application definition
@@ -189,32 +189,32 @@ WSGI_APPLICATION = 'spkproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'defaultdb',
+        'USER': 'avnadmin',
+        'PASSWORD': 'AVNS_j4RxIMZe3KbizKyV8be',  # replace with the actual password
+        'HOST': 'pg-3dd08b9c-bharathbharathkumar807-6d65.l.aivencloud.com',
+        'PORT': '17373',
+        'OPTIONS': {
+            'sslmode': 'require',  # Use 'require' for Aiven PostgreSQL
+        },
+    }
+}
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'defaultdb',
-#         'USER': 'avnadmin',
-#         'PASSWORD': 'AVNS_x9yEdSDgXmR7pqRnYgW',  # replace with the actual password
-#         'HOST': 'pg-5a6777f-santhosh20cs045k-744e.d.aivencloud.com',
-#         'PORT': '25870',
+#         'NAME': 'updatespkfin',
+#         'USER': 'postgres',
+#         'PASSWORD': 'bharath',  # replace with the actual password
+#         'HOST': 'localhost',
+#         'PORT': '5432',
 #         'OPTIONS': {
 #             'sslmode': 'disable',
 #         },
 #     }
 # }
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'updatespkfin',
-        'USER': 'postgres',
-        'PASSWORD': 'bharath',  # replace with the actual password
-        'HOST': 'localhost',
-        'PORT': '5432',
-        'OPTIONS': {
-            'sslmode': 'disable',
-        },
-    }
-}
 
 
 # Password validation

@@ -17,9 +17,10 @@ from core.permissions import (
     IsManagerUser,
     CanCreateManager,
     CanCreateStaff,
-    IsSuperUser
+    IsSuperUser,
+    _is_in_group
 )
-
+from django.db.models import Q 
 import logging
 logger = logging.getLogger(__name__)
 
@@ -322,78 +323,228 @@ def user_profile_view(request):
     }
     return Response(profile_data, status=status.HTTP_200_OK)
 
-
 class EmployeeDetailsViewSet(viewsets.ModelViewSet):
-    
     serializer_class = EmployeeDetailsViewSerializer
-    permission_classes = [IsAuthenticated, IsManagerUser]
-    
-    # Default queryset shows active profiles. Admin can use query params to see all.
-    queryset = EmployeeDetails.active_objects.all().select_related('user').order_by('-created_at') # Order by profile creation
+    # Base permission: User must be authenticated. Specific actions have more granular permissions.
+    # permission_classes = [permissions.IsAuthenticated] # Using get_permissions for action-specific
+
+    # queryset attribute is used by DRF for some default operations,
+    # but get_queryset is the primary source for list/retrieve.
+    # Initialize it to something sensible.
+    queryset = EmployeeDetails.objects.all().select_related('user').order_by('-created_at')
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires,
+        based on the action.
+        """
+        if self.action in ['list', 'retrieve']:
+            # Managers and Admins can list and retrieve employee details.
+            return [IsAuthenticated(), IsManagerUser()]
+        elif self.action in ['update', 'partial_update']:
+            # Managers and Admins can update. Specific checks in perform_update.
+            return [IsAuthenticated(), IsManagerUser()]
+        elif self.action == 'destroy': # This is our soft delete
+            return [IsAuthenticated(), IsAdminUser()]
+        elif self.action == 'restore_employee_profile':
+            return [IsAuthenticated(), IsAdminUser()]
+        # Default permissions for other actions if any (e.g., custom actions)
+        return [IsAuthenticated()] # Or a more restrictive default
 
     def get_queryset(self):
+        user = self.request.user
         
-        base_queryset = super().get_queryset() # This gets EmployeeDetails.active_objects.all() ...
+        # Determine the base queryset: all profiles or only active ones
+        include_deleted_param = self.request.query_params.get('include_deleted', 'false').lower()
         
-        include_deleted = self.request.query_params.get('include_deleted', 'false').lower()
-        if include_deleted == 'true':
-           
-            return EmployeeDetails.objects.all().select_related('user').order_by('-updated_at', '-created_at')
-        
-        # Default is the active_objects queryset defined at class level
-        return base_queryset.order_by('-user__date_joined', '-created_at') # Or specific ordering for active
+        if include_deleted_param == 'true':
+            # Only Admins/Superusers should typically see all (including deleted) profiles
+            if not (user.is_superuser or _is_in_group(user, 'Admin')):
+                logger.warning(
+                    f"User {user.username} (not Admin/Superuser) attempted to list with include_deleted=true. "
+                    "Restricting queryset to only their own active profile or none."
+                )
+                # Fallback to a very restricted queryset for non-admins asking for deleted items
+                # Or raise PermissionDenied("You are not authorized to view deleted profiles.")
+                return EmployeeDetails.active_objects.filter(user=user).select_related('user').order_by('-created_at')
+            
+            # Authorized user (Admin/Superuser) requests all profiles
+            base_queryset = EmployeeDetails.objects.all().select_related('user')
+        else:
+            # Default: show only active profiles
+            base_queryset = EmployeeDetails.active_objects.all().select_related('user')
+
+        # Apply role-based filtering
+        if user.is_superuser:
+            # If the superuser is also explicitly in the 'Admin' group, they are treated like a regular Admin for listing.
+            # Otherwise, a "pure" superuser sees Admins, Managers, Staff, but not other "pure" superusers.
+            if not _is_in_group(user, 'Admin'):
+                 # Show Admins, Managers, Staff. Exclude other pure superusers.
+                return base_queryset.exclude(
+                    Q(user__is_superuser=True) & ~Q(user__groups__name='Admin') & ~Q(user=user)
+                ).distinct().order_by('-user__date_joined', '-created_at')
+            # If superuser is also in Admin group, they fall into the Admin logic below.
+
+        if _is_in_group(user, 'Admin'):
+            # Admin sees other Admins (non-superusers or themselves if they are a superuser-admin),
+            # Managers, and Staff.
+            return base_queryset.filter(
+                Q(user__groups__name='Admin') | 
+                Q(user__groups__name='Manager') | 
+                Q(user__groups__name='Staff')
+            ).exclude( # Exclude superusers who are NOT also in the Admin group, unless it's the requesting admin themselves
+                Q(user__is_superuser=True) & ~Q(user__groups__name='Admin') & ~Q(user=user)
+            ).distinct().order_by('-user__date_joined', '-created_at')
+
+        elif _is_in_group(user, 'Manager'):
+            # Manager sees Staff.
+            # Optionally, Managers can see other Managers (currently configured not to).
+            return base_queryset.filter(
+                Q(user__groups__name='Staff')
+                # | Q(user__groups__name='Manager') # Uncomment if Managers should see other Managers
+            ).exclude( # Ensure managers cannot see Admins or Superusers
+                Q(user__groups__name='Admin') | Q(user__is_superuser=True)
+            ).distinct().order_by('-user__date_joined', '-created_at')
+
+        # Staff users are blocked by get_permissions for 'list' action (IsManagerUser).
+        # If permissions were IsStaffUser, this would be the logic:
+        # elif _is_in_group(user, 'Staff'):
+        #     return base_queryset.filter(user=user).order_by('-user__date_joined', '-created_at')
+
+        logger.warning(
+            f"User {user.username} (role not explicitly handled or insufficient permissions for list view) "
+            "attempted to list employees. Returning empty queryset."
+        )
+        return base_queryset.none() # Fallback for unhandled roles or if permissions fail unexpectedly
+
 
     def perform_update(self, serializer):
-      
-       
-        instance = serializer.save()
-        logger.info(f"EmployeeDetails for '{instance.user.username}' (ID: {instance.employee_id}) updated by Admin '{self.request.user.username}'.")
-        # Log specific changes if necessary, e.g., if leaving_date was set/cleared.
+        requesting_user = self.request.user
+        # The instance being updated is serializer.instance (EmployeeDetails object)
+        # The user associated with that profile is serializer.instance.user
+        profile_being_updated = serializer.instance
+        user_account_being_updated = profile_being_updated.user
 
-    def perform_destroy(self, instance):
-       
+        # --- Permission checks before saving ---
+        # 1. Superusers can update anyone (except maybe other superusers if stricter rules apply)
+        if requesting_user.is_superuser:
+            # A superuser might not be allowed to easily demote/deactivate another superuser
+            if user_account_being_updated.is_superuser and user_account_being_updated != requesting_user:
+                 logger.warning(f"Superuser {requesting_user.username} attempting to modify another superuser {user_account_being_updated.username}.")
+                 # Decide on policy: allow, or raise PermissionDenied. For now, allow with logging.
+
+            instance = serializer.save()
+            logger.info(f"EmployeeDetails for '{instance.user.username}' (ID: {instance.employee_id}) updated by SUPERUSER '{requesting_user.username}'.")
+            return
+
+        # 2. Admins can update other Admins, Managers, Staff. Cannot update Superusers.
+        if _is_in_group(requesting_user, 'Admin'):
+            if user_account_being_updated.is_superuser:
+                raise PermissionDenied("Admins cannot modify Superuser accounts.")
+            # Admins can modify other Admins, Managers, Staff
+            instance = serializer.save()
+            logger.info(f"EmployeeDetails for '{instance.user.username}' (ID: {instance.employee_id}) updated by ADMIN '{requesting_user.username}'.")
+            return
+
+        # 3. Managers can update Staff and potentially other Managers (depending on config). Cannot update Admins/Superusers.
+        if _is_in_group(requesting_user, 'Manager'):
+            if user_account_being_updated.is_superuser or _is_in_group(user_account_being_updated, 'Admin'):
+                raise PermissionDenied("Managers cannot modify Admin or Superuser accounts.")
+            
+            # If managers can only update staff:
+            if not _is_in_group(user_account_being_updated, 'Staff'):
+                 # And if they are trying to update another manager (and this is not allowed)
+                if _is_in_group(user_account_being_updated, 'Manager') and user_account_being_updated != requesting_user: # Or a more general check
+                     # raise PermissionDenied("Managers can only update Staff profiles or their own.") # Be more specific based on policy
+                     pass # Assuming for now a manager can update another manager. Refine if needed.
+
+
+            # Prevent Manager from setting a leaving_date for an Admin (already covered by group check, but good explicit check)
+            if 'leaving_date' in serializer.validated_data and serializer.validated_data['leaving_date'] is not None:
+                if _is_in_group(user_account_being_updated, 'Admin') or user_account_being_updated.is_superuser:
+                    raise PermissionDenied("Managers cannot set a leaving date for Admins or Superusers.")
+
+            instance = serializer.save()
+            logger.info(f"EmployeeDetails for '{instance.user.username}' (ID: {instance.employee_id}) updated by MANAGER '{requesting_user.username}'.")
+            return
+        
+        # If none of the above, permission should have been caught by get_permissions
+        raise PermissionDenied("You do not have permission to perform this update.")
+
+
+    def perform_destroy(self, instance): # Soft delete
+        requesting_user = self.request.user
+        profile_being_deleted = instance
+        user_account_being_deleted = profile_being_deleted.user
+
+        # Permissions for destroy are IsAdminUser (checked by get_permissions)
+        # Additional sanity checks:
+        if user_account_being_deleted == requesting_user:
+            raise PermissionDenied("You cannot deactivate your own account using this administrative endpoint.")
+
+        if user_account_being_deleted.is_superuser and not requesting_user.is_superuser:
+            raise PermissionDenied("Only a Superuser can deactivate another Superuser's account.")
+        
+        # An Admin should not be able to deactivate a Superuser (even if superuser is in Admin group)
+        if _is_in_group(requesting_user, 'Admin') and not requesting_user.is_superuser:
+            if user_account_being_deleted.is_superuser:
+                raise PermissionDenied("Admins cannot deactivate Superuser accounts.")
+        
         if hasattr(instance, 'soft_delete_profile'):
-            instance.soft_delete_profile() # This method sets is_deleted, deleted_at, leaving_date, and user.is_active=False
-            logger.info(f"EmployeeProfile for user '{instance.user.username}' (ID: {instance.employee_id}) soft-deleted by Admin '{self.request.user.username}'.")
+            instance.soft_delete_profile()
+            logger.info(f"EmployeeProfile for user '{user_account_being_deleted.username}' (ID: {instance.employee_id}) soft-deleted by '{requesting_user.username}'.")
         else:
-            # Fallback if soft_delete_profile method somehow doesn't exist (should not happen)
+            # Fallback logic
             instance.is_deleted = True
             instance.deleted_at = timezone.now()
             if not instance.leaving_date:
                 instance.leaving_date = timezone.now().date()
-            if instance.user:
+            if instance.user: # Should always be true for an EmployeeDetails instance
                 instance.user.is_active = False
                 instance.user.save(update_fields=['is_active'])
-            instance.save()
-            logger.warning(f"EmployeeProfile for user '{instance.user.username}' (ID: {instance.employee_id}) soft-deleted (FALLBACK) by Admin '{self.request.user.username}'.")
+            instance.save(update_fields=['is_deleted', 'deleted_at', 'leaving_date']) # Be specific
+            logger.warning(f"EmployeeProfile for user '{user_account_being_deleted.username}' (ID: {instance.employee_id}) soft-deleted (FALLBACK) by '{requesting_user.username}'.")
+
 
     @action(detail=True, methods=['post'], url_path='restore-profile', permission_classes=[IsAdminUser])
     def restore_employee_profile(self, request, pk=None):
-        
-        profile = get_object_or_404(EmployeeDetails.objects.all(), pk=pk)
+        # permission_classes=[IsAdminUser] ensures only Admin/Superuser can call this
+        profile = get_object_or_404(EmployeeDetails.objects.all(), pk=pk) # Get any profile status
 
-        if not profile.is_deleted and profile.leaving_date is None: # Check both conditions for "active"
-            return Response({'status': 'info', 'message': 'Employee profile is already active and not marked for leaving.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Additional check: A regular Admin should not be able to restore a Superuser profile
+        # if profile.user.is_superuser and not request.user.is_superuser:
+        #     raise PermissionDenied("Only a Superuser can restore another Superuser's profile.")
+        # This logic might be too strict if a superuser was accidentally deactivated by another superuser
+        # and an Admin needs to fix it. For now, IsAdminUser permission is the main gate.
+
+        if not profile.is_deleted and profile.leaving_date is None:
+            return Response(
+                {'status': 'info', 'message': 'Employee profile is already active and not marked for leaving.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         try:
             if hasattr(profile, 'restore_profile'):
                 profile.restore_profile()
-                message = 'Employee profile restored.'
-                logger.info(f"EmployeeProfile for user '{profile.user.username}' (ID: {profile.employee_id}) restored by Admin '{request.user.username}'.")
-                serializer = self.get_serializer(profile)
+                logger.info(f"EmployeeProfile for user '{profile.user.username}' (ID: {profile.employee_id}) restored by '{request.user.username}'.")
+                serializer = self.get_serializer(profile) # Use self.get_serializer for context
                 return Response({'status': 'success', 'message': 'Employee profile restored.', 'data': serializer.data})
-            else: # Fallback (should not happen)
+            else:
+                # Fallback logic
                 profile.is_deleted = False
                 profile.deleted_at = None
-                profile.leaving_date = None
+                profile.leaving_date = None # Explicitly clear leaving_date
                 if profile.user:
                     profile.user.is_active = True
                     profile.user.save(update_fields=['is_active'])
-                profile.save()
-                logger.warning(f"EmployeeProfile for user '{profile.user.username}' (ID: {profile.employee_id}) restored (FALLBACK) by Admin '{request.user.username}'.")
+                profile.save(update_fields=['is_deleted', 'deleted_at', 'leaving_date']) # Be specific
+                logger.warning(f"EmployeeProfile for user '{profile.user.username}' (ID: {profile.employee_id}) restored (FALLBACK) by '{request.user.username}'.")
                 serializer = self.get_serializer(profile)
                 return Response({'status': 'success', 'message': 'Employee profile restored (fallback).', 'data': serializer.data})
 
         except Exception as e:
-            logger.error(f"Error restoring profile for user {profile.user.username} (ID: {profile.employee_id}) by Admin {request.user.username}: {e}", exc_info=True)
-            return Response({'status': 'error', 'message': 'Error restoring employee profile.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error restoring profile for user {profile.user.username} (ID: {profile.employee_id}) by '{request.user.username}': {e}", exc_info=True)
+            return Response(
+                {'status': 'error', 'message': 'An unexpected error occurred while restoring the employee profile.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

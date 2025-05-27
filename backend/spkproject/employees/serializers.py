@@ -169,7 +169,10 @@ class EmployeeDetailsViewSerializer(serializers.ModelSerializer):
     id_proofs = EmployeeIDProofSerializer(many=True, read_only=True) # 'id_proofs' is the related_name
 
     is_currently_employed = serializers.BooleanField(read_only=True)
-
+     # --- NEW: Password fields ---
+    password = serializers.CharField(write_only=True, required=False, allow_blank=True, style={'input_type': 'password'})
+    confirm_password = serializers.CharField(write_only=True, required=False, allow_blank=True, style={'input_type': 'password'})
+    
     class Meta:
         model = EmployeeDetails
         fields = [
@@ -180,7 +183,7 @@ class EmployeeDetailsViewSerializer(serializers.ModelSerializer):
             'joining_date', 'leaving_date',
             'is_active', 'groups', 'role', 'employee_id', 'is_currently_employed',
             'is_deleted', 'deleted_at', 'created_at', 'updated_at',
-            'id_proofs' # <<< ADDED TO FIELDS
+            'id_proofs','password', 'confirm_password'
         ]
         read_only_fields = (
             'id', 'user', 'username', 'employee_id', 'first_name',
@@ -194,76 +197,117 @@ class EmployeeDetailsViewSerializer(serializers.ModelSerializer):
     def get_groups(self, obj):
         if obj.user: return list(obj.user.groups.values_list('name', flat=True))
         return []
+    
+    def validate(self, attrs):
+        password = attrs.get('password')
+        confirm_password = attrs.get('confirm_password')
 
+        if password or confirm_password: # If user typed in either field
+            if not password: # Password field itself is empty but confirm_password might not be
+                 raise serializers.ValidationError({"password": "Password field cannot be empty if you intend to change it."})
+            if password != confirm_password:
+                raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+        return attrs    
     def update(self, instance, validated_data):
         # instance is EmployeeDetails instance
-        user = instance.user
-        request = self.context['request'] # Get request from context
+        user_instance = instance.user 
+        request = self.context['request']
 
         logger.debug(f"--- EmployeeDetailsViewSerializer UPDATE ---")
+        logger.debug(f"Instance (EmployeeDetails): {instance}, User: {user_instance.username}") # Added log
         logger.debug(f"Initial validated_data: {validated_data}")
-        logger.debug(f"Request.data (raw form data): {request.data}")
-        logger.debug(f"Request.FILES: {request.FILES}")
+        # logger.debug(f"Request.data (raw form data): {request.data}") # Can be verbose
+        # logger.debug(f"Request.FILES: {request.FILES}")
 
-        # --- Transaction for all updates ---
         with transaction.atomic():
-            # 1. Handle User Fields (email, last_name)
-            user_data_changed = False
-            user_update_fields_list = []
-            user_fields_to_pop = ['email', 'last_name'] # first_name is read-only
+            # 1. Handle User specific updates (email, last_name, password)
+            user_model_updated = False 
 
-            for key in user_fields_to_pop:
-                if key in validated_data: # Check if present in validated_data from PATCH
-                    value = validated_data.pop(key)
-                    if getattr(user, key) != value:
-                        if key == 'email' and User.objects.filter(email=value).exclude(pk=user.pk).exists():
+            new_password = validated_data.pop('password', None)
+            validated_data.pop('confirm_password', None) 
+
+            if new_password: 
+                user_instance.set_password(new_password) # This hashes the password
+                user_model_updated = True
+                logger.info(f"Password for user '{user_instance.username}' was set in memory.")
+
+
+            user_direct_updatable_fields = ['email', 'last_name']
+            user_fields_actually_updated_on_model = []
+
+            for field_name in user_direct_updatable_fields:
+                if field_name in validated_data: 
+                    new_value = validated_data.pop(field_name) 
+                    if getattr(user_instance, field_name) != new_value:
+                        if field_name == 'email' and User.objects.filter(email=new_value).exclude(pk=user_instance.pk).exists():
                             raise serializers.ValidationError({'email': 'This email is already used by another user.'})
-                        setattr(user, key, value)
-                        user_data_changed = True
-                        user_update_fields_list.append(key)
-            if user_data_changed:
-                user.save(update_fields=user_update_fields_list)
-                logger.info(f"Updated User fields for {user.username}: {user_update_fields_list}")
+                        setattr(user_instance, field_name, new_value)
+                        user_fields_actually_updated_on_model.append(field_name)
+                        user_model_updated = True
+            
+            if user_model_updated:
+                # If password changed, user_instance.save() without update_fields saves everything, including the hashed_password.
+                # Django's User model's save() method handles the password field correctly without needing it in update_fields.
+                if new_password:
+                    user_instance.save() 
+                    logger.info(f"User '{user_instance.username}' saved. Password updated. Other fields updated: {user_fields_actually_updated_on_model}")
+                elif user_fields_actually_updated_on_model: 
+                    user_instance.save(update_fields=user_fields_actually_updated_on_model)
+                    logger.info(f"User '{user_instance.username}' saved. Updated fields: {user_fields_actually_updated_on_model}")
+                else: # This case might occur if only password was set and no other user fields changed
+                    user_instance.save() # Ensure save is called if only password changed
+                    logger.info(f"User '{user_instance.username}' saved. Only password was updated.")
 
-            # 2. Handle EmployeeDetails direct fields (including profile photo)
+
+            # 2. Handle EmployeeDetails direct fields
             employee_details_changed = False
             employee_details_update_fields_list = []
             
-            # Handle employee_photo separately if it was sent
-            if 'employee_photo' in validated_data:
-                new_photo = validated_data.pop('employee_photo')
-                if new_photo is None or new_photo == '': # Client wants to clear the photo
+            # Handle employee_photo
+            if 'employee_photo' in validated_data: # Check if 'employee_photo' key exists
+                new_photo = validated_data.pop('employee_photo') # new_photo can be File, None, or ""
+                
+                if new_photo == "" or new_photo is None: # Clear photo
                     if instance.employee_photo:
-                        instance.employee_photo.delete(save=False) # Delete old file
-                    instance.employee_photo = None
-                else: # New file uploaded
-                    if instance.employee_photo: # Delete old file if exists
+                        logger.info(f"Clearing employee_photo for {user_instance.username}. Old file: {instance.employee_photo.name if instance.employee_photo else 'None'}")
+                        instance.employee_photo.delete(save=False) # Delete old file from storage
+                    instance.employee_photo = None # Set field to None
+                elif new_photo: # New file uploaded (isinstance(new_photo, File) is implicitly true here by DRF)
+                    logger.info(f"Updating employee_photo for {user_instance.username} with new file: {new_photo.name}")
+                    if instance.employee_photo and instance.employee_photo.name: # Delete old file if exists
+                        logger.info(f"Deleting old employee_photo: {instance.employee_photo.name}")
                         instance.employee_photo.delete(save=False)
-                    instance.employee_photo = new_photo
+                    instance.employee_photo = new_photo # Assign new file
+                
+                # Regardless of clear or update, mark as changed and add to update_fields
                 employee_details_changed = True
                 employee_details_update_fields_list.append('employee_photo')
 
-            # Update other EmployeeDetails fields from validated_data
-            for attr, value in validated_data.items():
-                # Ensure attribute exists on the instance and is not a relation handled elsewhere
-                if hasattr(instance, attr) and attr not in ['user', 'id_proofs']:
+
+            # Update other EmployeeDetails fields
+            for attr, value in validated_data.items(): # validated_data now only contains EmployeeDetails fields
+                if hasattr(instance, attr) and attr not in ['user', 'id_proofs']: # 'user' and 'id_proofs' are relations
                     if getattr(instance, attr) != value:
                         setattr(instance, attr, value)
                         employee_details_changed = True
-                        if attr not in employee_details_update_fields_list: # Avoid duplicates if photo was already added
+                        if attr not in employee_details_update_fields_list:
                             employee_details_update_fields_list.append(attr)
             
             if employee_details_changed:
-                if employee_details_update_fields_list:
+                if employee_details_update_fields_list: # If there are specific fields to update
+                    logger.info(f"Saving EmployeeDetails for {user_instance.username} with update_fields: {employee_details_update_fields_list}")
                     instance.save(update_fields=employee_details_update_fields_list)
-                else: # This case might happen if only photo was changed and list is empty
-                    instance.save() # Save the instance if only photo changed without other fields
-                logger.info(f"Updated EmployeeDetails fields for {user.username}: {employee_details_update_fields_list or 'photo only'}")
+                else: # This might happen if only photo was changed, but list should contain 'employee_photo'
+                      # Or if no actual EmployeeDetails fields changed but employee_details_changed was true (should not happen)
+                    logger.info(f"Saving EmployeeDetails for {user_instance.username} (no specific update_fields, full save). This case should be reviewed.")
+                    instance.save() 
+                logger.info(f"Updated EmployeeDetails fields for {user_instance.username}: {employee_details_update_fields_list or 'photo only or no changes'}")
 
 
             # 3. Handle Deletion of Existing ID Proofs
+            # ... (your existing ID proof deletion logic - assumed correct for now) ...
             ids_to_delete_str = request.data.getlist('delete_document_ids[]')
-            if not ids_to_delete_str: # Fallback for some FormData parsers
+            if not ids_to_delete_str: 
                 ids_to_delete_str = [v for k, v_list in request.data.lists() for v in v_list if k == 'delete_document_ids[]']
 
             document_ids_to_delete = [int(id_str) for id_str in ids_to_delete_str if id_str.isdigit()]
@@ -275,7 +319,9 @@ class EmployeeDetailsViewSerializer(serializers.ModelSerializer):
                 ).delete()
                 logger.info(f"Deleted {deleted_count} existing ID proof documents for employee {instance.id}.")
 
+
             # 4. Handle Creation of New ID Proofs
+            # ... (your existing ID proof creation logic - assumed correct for now) ...
             new_documents_to_create = []
             index = 0
             while True:
@@ -304,21 +350,27 @@ class EmployeeDetailsViewSerializer(serializers.ModelSerializer):
                 EmployeeIDProof.objects.bulk_create(new_documents_to_create)
                 logger.info(f"Created {len(new_documents_to_create)} new ID proof documents for employee {instance.id}.")
 
-            # 5. Handle leaving_date logic and user active status
-            old_leaving_date = getattr(EmployeeDetails.objects.get(pk=instance.pk), 'leaving_date', None) # Get current DB value
-            new_leaving_date = validated_data.get('leaving_date', instance.leaving_date) # Get from validated or current instance
+            # 5. Handle leaving_date logic
+            # Get the value of leaving_date *before* any potential modifications in this update method
+            db_instance_before_save = EmployeeDetails.objects.get(pk=instance.pk)
+            old_leaving_date = db_instance_before_save.leaving_date
+            
+            # new_leaving_date is the value that will be set on the instance by setattr if 'leaving_date' was in validated_data
+            # or it's the instance's current value if 'leaving_date' wasn't in validated_data
+            new_leaving_date = getattr(instance, 'leaving_date', None) 
 
-            if new_leaving_date != old_leaving_date: # If leaving_date changed or set/cleared
-                if new_leaving_date is not None: # Leaving date is set or changed
+            if new_leaving_date != old_leaving_date:
+                logger.info(f"Leaving date changed for {user_instance.username}. Old: {old_leaving_date}, New: {new_leaving_date}")
+                if new_leaving_date is not None: 
                     if hasattr(instance, 'soft_delete_profile') and not instance.is_deleted:
-                        instance.is_deleted = True # Mark for soft_delete to correctly set leaving_date
-                        instance.leaving_date = new_leaving_date # Ensure this specific date is used
-                        instance.soft_delete_profile() # This will also set user.is_active = False
-                        logger.info(f"Employee {user.username} marked as left on {new_leaving_date}.")
+                        # Ensure the instance has the correct leaving_date *before* calling soft_delete
+                        # This is already handled by setattr above if 'leaving_date' was in validated_data
+                        instance.soft_delete_profile() 
+                        logger.info(f"Employee {user_instance.username} marked as left on {instance.leaving_date} via soft_delete_profile.")
                 elif new_leaving_date is None and old_leaving_date is not None: # Leaving date cleared
                     if hasattr(instance, 'restore_profile') and (instance.is_deleted or not instance.user.is_active):
-                        instance.restore_profile() # This will also set user.is_active = True
-                        logger.info(f"Employee {user.username} restored, leaving date cleared.")
-
-        instance.refresh_from_db() # Important to get the latest state, including related documents
+                        instance.restore_profile() 
+                        logger.info(f"Employee {user_instance.username} restored, leaving date cleared via restore_profile.")
+            
+        instance.refresh_from_db()
         return instance

@@ -13,14 +13,12 @@ urlpatterns = [
   
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')), 
-    # re_path(r'^(?!media/|static/|api/).*$', views.index, name='index'),
-    # path('api/', include('finance_app.urls')),
-     # --- Add JWT Authentication URLs ---
-    # Frontend will POST to this URL with username & password
+    
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     # Frontend will POST to this URL with refresh_token to get new access_token
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # --- End JWT URLs ---
+    re_path(r'^(?!media/|static/|api/).*$', views.index, name='index'),
+   
 ]
     
 
